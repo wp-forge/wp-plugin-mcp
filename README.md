@@ -123,15 +123,22 @@ All MCP tools are exposed directly as top-level `wp-forge-*` tools.
 
 ## Copy-Paste MCP Configuration
 
-Replace `https://example.com` with your site URL. Create a WordPress Application Password from your user profile, then Base64 encode `username:application-password` and replace the placeholder below.
+Replace `https://example.com` with your site URL. Create a WordPress Application Password from your user profile, then replace the username and password placeholders below.
 
 ```json
 {
   "mcpServers": {
     "wordpress": {
-      "url": "https://example.com/wp-json/mcp/wp-forge",
-      "headers": {
-        "Authorization": "Basic BASE64_USERNAME_APPLICATION_PASSWORD"
+      "command": "npx",
+      "args": [
+        "-y",
+        "@automattic/mcp-wordpress-remote"
+      ],
+      "env": {
+        "WP_API_URL": "https://example.com/wp-json/mcp/wp-forge",
+        "WP_API_USERNAME": "YOUR_WORDPRESS_USERNAME",
+        "WP_API_PASSWORD": "YOUR_APPLICATION_PASSWORD",
+        "OAUTH_ENABLED": "false"
       }
     }
   }
