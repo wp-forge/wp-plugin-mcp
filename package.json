@@ -6,6 +6,6 @@
     "test:playground": "node tests/integration/mcp-endpoint.mjs"
   },
   "devDependencies": {
-    "@wp-playground/cli": "^1.0.0"
+    "@wp-playground/cli": "^3.1.39"
   }
 }
