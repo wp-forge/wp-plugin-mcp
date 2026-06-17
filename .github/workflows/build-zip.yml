@@ -1,0 +1,38 @@
+name: Build Distribution Zip
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install production dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Build plugin zip
+        run: |
+          mkdir -p build/wp-plugin-mcp
+          rsync -av --delete --exclude-from=.distignore ./ build/wp-plugin-mcp/
+          cd build
+          zip -r wp-plugin-mcp.zip wp-plugin-mcp
+
+      - name: Upload plugin zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: wp-plugin-mcp
+          path: build/wp-plugin-mcp.zip

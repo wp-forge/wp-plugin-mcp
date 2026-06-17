@@ -1,0 +1,12 @@
+.git/
+.github/
+.distignore
+.gitignore
+composer.lock
+node_modules/
+tests/
+vendor/bin/
+*.zip
+*.log
+DS_Store
+.DS_Store
