@@ -12,6 +12,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Setup workflow context
+        id: workflow
+        working-directory: ${{ runner.temp }}
+        run: |
+          mkdir dist
+          echo "DIST=${PWD}/dist" >> "$GITHUB_OUTPUT"
+          echo "PACKAGE=wp-plugin-mcp" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -24,13 +32,19 @@ jobs:
       - name: Install production dependencies
         run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Build plugin package
+      - name: Prepare files
+        env:
+          DIST: ${{ steps.workflow.outputs.DIST }}
         run: |
-          mkdir -p build/artifact/wp-plugin-mcp
-          rsync -av --delete --exclude-from=.distignore ./ build/artifact/wp-plugin-mcp/
+          mkdir -p "$DIST/wp-plugin-mcp"
+          rsync -r --delete --exclude-from=.distignore ./ "$DIST/wp-plugin-mcp/"
+
+      - name: List files
+        working-directory: ${{ steps.workflow.outputs.DIST }}
+        run: find .
 
       - name: Upload installable plugin artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wp-plugin-mcp
-          path: build/artifact/*
+          name: ${{ steps.workflow.outputs.PACKAGE }}
+          path: ${{ steps.workflow.outputs.DIST }}
