@@ -77,7 +77,7 @@ class Admin {
 				<li><?php esc_html_e( 'Base64 encode username:application-password and replace BASE64_USERNAME_APPLICATION_PASSWORD in the configuration.', 'wp-plugin-mcp' ); ?></li>
 			</ol>
 
-			<p><?php esc_html_e( 'The MCP tools exposed by this plugin are wp-forge-list-abilities, wp-forge-get-ability-schema, and wp-forge-call-ability. All WordPress abilities returned by the catalog also use the wp-forge prefix.', 'wp-plugin-mcp' ); ?></p>
+			<p><?php esc_html_e( 'All MCP tools exposed by this plugin use the wp-forge prefix, such as wp-forge-posts-search and wp-forge-get-site-info.', 'wp-plugin-mcp' ); ?></p>
 		</div>
 		<?php
 	}

@@ -173,7 +173,7 @@ class Server {
 		}
 
 		if ( 'tools/list' === $method ) {
-			return $this->json_rpc_success( $id, array( 'tools' => $this->gateway_tools() ) );
+			return $this->json_rpc_success( $id, array( 'tools' => $this->abilities->list_tools() ) );
 		}
 
 		if ( 'tools/call' === $method ) {
@@ -182,86 +182,10 @@ class Server {
 			}
 
 			$arguments = isset( $params['arguments'] ) && is_array( $params['arguments'] ) ? $params['arguments'] : array();
-			return $this->json_rpc_success( $id, $this->call_gateway_tool( (string) $params['name'], $arguments ) );
+			return $this->json_rpc_success( $id, $this->tool_success( $this->abilities->call( (string) $params['name'], $arguments ) ) );
 		}
 
 		return $this->json_rpc_error( $id, -32601, 'Method not found: ' . $method, 404 );
-	}
-
-	/**
-	 * Call one of the three exposed gateway tools.
-	 *
-	 * @param string              $tool_name Tool name.
-	 * @param array<string,mixed> $arguments Tool arguments.
-	 * @return array<string,mixed>
-	 */
-	private function call_gateway_tool( $tool_name, $arguments ) {
-		switch ( $tool_name ) {
-			case 'wp-forge-list-abilities':
-				$payload = Response::success( $this->abilities->list_abilities( $arguments ) );
-				break;
-			case 'wp-forge-get-ability-schema':
-				if ( empty( $arguments['ability_name'] ) ) {
-					return $this->tool_error( 'ability_name is required.' );
-				}
-				$schema = $this->abilities->get_schema( $arguments['ability_name'] );
-				$payload = $schema ? Response::success( $schema ) : Response::error( 'Unknown ability: ' . $arguments['ability_name'], 404 );
-				break;
-			case 'wp-forge-call-ability':
-				if ( empty( $arguments['ability_name'] ) ) {
-					return $this->tool_error( 'ability_name is required.' );
-				}
-				$payload = $this->abilities->call( $arguments['ability_name'], isset( $arguments['parameters'] ) && is_array( $arguments['parameters'] ) ? $arguments['parameters'] : array() );
-				break;
-			default:
-				return $this->tool_error( 'Tool not found: ' . $tool_name );
-		}
-
-		return $this->tool_success( $payload );
-	}
-
-	/**
-	 * Gateway tool schemas.
-	 *
-	 * @return array<int,array<string,mixed>>
-	 */
-	private function gateway_tools() {
-		return array(
-			array(
-				'name'        => 'wp-forge-list-abilities',
-				'description' => 'Discover the WordPress abilities available through this MCP server.',
-				'inputSchema' => array(
-					'type'       => 'object',
-					'properties' => array(
-						'search'      => array( 'type' => 'string', 'description' => 'Search names, labels, and descriptions.' ),
-						'name_prefix' => array( 'type' => 'string', 'description' => 'Filter by ability name prefix, such as wp-forge-posts.' ),
-					),
-				),
-			),
-			array(
-				'name'        => 'wp-forge-get-ability-schema',
-				'description' => 'Get the parameter schema for a WordPress ability.',
-				'inputSchema' => array(
-					'type'       => 'object',
-					'required'   => array( 'ability_name' ),
-					'properties' => array(
-						'ability_name' => array( 'type' => 'string', 'description' => 'Ability name from wp-forge-list-abilities.' ),
-					),
-				),
-			),
-			array(
-				'name'        => 'wp-forge-call-ability',
-				'description' => 'Run a WordPress ability by name.',
-				'inputSchema' => array(
-					'type'       => 'object',
-					'required'   => array( 'ability_name' ),
-					'properties' => array(
-						'ability_name' => array( 'type' => 'string', 'description' => 'Ability name from wp-forge-list-abilities.' ),
-						'parameters'   => array( 'type' => 'object', 'description' => 'Parameters that match the ability schema.' ),
-					),
-				),
-			),
-		);
 	}
 
 	/**
@@ -315,24 +239,6 @@ class Server {
 				),
 			),
 			'structuredContent' => $payload,
-		);
-	}
-
-	/**
-	 * Format MCP tool error.
-	 *
-	 * @param string $message Message.
-	 * @return array<string,mixed>
-	 */
-	private function tool_error( $message ) {
-		return array(
-			'content' => array(
-				array(
-					'type' => 'text',
-					'text' => $message,
-				),
-			),
-			'isError' => true,
 		);
 	}
 

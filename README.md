@@ -6,13 +6,7 @@ WordPress MCP adds a Model Context Protocol endpoint to WordPress at:
 /wp-json/mcp/wp-forge
 ```
 
-The public MCP tools are:
-
-- `wp-forge-list-abilities`
-- `wp-forge-get-ability-schema`
-- `wp-forge-call-ability`
-
-The ability catalog mirrors the non-WooCommerce tools from `newfold-labs/wp-module-mcp`, namespaced as `wp-forge-*`.
+All MCP tools are exposed directly as top-level `wp-forge-*` tools.
 
 Included ability groups:
 

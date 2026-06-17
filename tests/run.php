@@ -92,7 +92,7 @@ $expected_named_tools = array(
 );
 
 foreach ( $expected_named_tools as $expected_name ) {
-	assert_true( in_array( $expected_name, $names, true ), 'Expected upstream non-WooCommerce tool: ' . $expected_name );
+	assert_true( in_array( $expected_name, $names, true ), 'Expected WordPress tool: ' . $expected_name );
 }
 
 foreach ( $names as $name ) {
@@ -106,6 +106,15 @@ assert_same( array( 'wp-forge-posts-search' ), array_column( $filtered, 'name' )
 $schema = $abilities->get_schema( 'wp-forge-add-post' );
 assert_same( 'wp-forge-add-post', $schema['name'], 'Schema lookup should accept MCP tool names.' );
 assert_same( false, $schema['annotations']['readonly'], 'Add post should be marked writable.' );
+
+$direct_tools = $abilities->list_tools();
+$direct_tool_names = array_column( $direct_tools, 'name' );
+assert_same( 47, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
+assert_true( in_array( 'wp-forge-posts-search', $direct_tool_names, true ), 'Direct tool list should include posts search.' );
+assert_true( in_array( 'wp-forge-get-active-theme', $direct_tool_names, true ), 'Direct tool list should include active theme.' );
+assert_true( ! in_array( 'wp-forge-list-abilities', $direct_tool_names, true ), 'Gateway list tool should not be exposed.' );
+assert_true( ! in_array( 'wp-forge-get-ability-schema', $direct_tool_names, true ), 'Gateway schema tool should not be exposed.' );
+assert_true( ! in_array( 'wp-forge-call-ability', $direct_tool_names, true ), 'Gateway call tool should not be exposed.' );
 
 $missing_runtime = $abilities->call( 'wp-forge-posts-search', array() );
 assert_same( 'error', $missing_runtime['status'], 'WordPress-dependent ability should report missing runtime in unit tests.' );
@@ -146,11 +155,10 @@ $tools = $server->handle(
 	$initialized['_session_id']
 );
 $tool_names = array_column( $tools['result']['tools'], 'name' );
-assert_same(
-	array( 'wp-forge-list-abilities', 'wp-forge-get-ability-schema', 'wp-forge-call-ability' ),
-	$tool_names,
-	'tools/list should expose the three gateway tools.'
-);
+assert_same( 47, count( $tool_names ), 'tools/list should expose every WordPress tool directly.' );
+assert_true( in_array( 'wp-forge-posts-search', $tool_names, true ), 'tools/list should expose posts search directly.' );
+assert_true( in_array( 'wp-forge-get-site-info', $tool_names, true ), 'tools/list should expose site info directly.' );
+assert_true( ! in_array( 'wp-forge-call-ability', $tool_names, true ), 'tools/list should not expose a gateway call tool.' );
 
 $called = $server->handle(
 	array(
@@ -158,13 +166,13 @@ $called = $server->handle(
 		'id'      => 4,
 		'method'  => 'tools/call',
 		'params'  => array(
-			'name'      => 'wp-forge-list-abilities',
-			'arguments' => array( 'search' => 'global styles' ),
+			'name'      => 'wp-forge-posts-search',
+			'arguments' => array(),
 		),
 	),
 	$initialized['_session_id']
 );
-assert_same( 'success', $called['result']['structuredContent']['status'], 'Gateway list ability should return structured content.' );
-assert_true( count( $called['result']['structuredContent']['message'] ) >= 3, 'Global styles search should find style abilities.' );
+assert_same( 'error', $called['result']['structuredContent']['status'], 'Direct tool calls should dispatch to the named WordPress tool.' );
+assert_same( 500, $called['result']['structuredContent']['statusCode'], 'Direct tool call should return the ability response.' );
 
 echo 'Tests passed: ' . $tests_run . PHP_EOL;

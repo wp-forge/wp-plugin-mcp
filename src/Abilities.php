@@ -7,6 +7,13 @@
 
 namespace WP_Forge;
 
+use WP_Forge\Tools\ContentManagementTools;
+use WP_Forge\Tools\GlobalStylesTools;
+use WP_Forge\Tools\MediaTools;
+use WP_Forge\Tools\RestCatalogTools;
+use WP_Forge\Tools\SiteManagementTools;
+use WP_Forge\Tools\TaxonomyTools;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -15,6 +22,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Registers wp-forge abilities and dispatches calls.
  */
 class Abilities {
+	use ContentManagementTools;
+	use GlobalStylesTools;
+	use MediaTools;
+	use RestCatalogTools;
+	use SiteManagementTools;
+	use TaxonomyTools;
+
 	const INTERNAL_PREFIX = 'wp-forge/';
 	const TOOL_PREFIX     = 'wp-forge-';
 
@@ -66,6 +80,26 @@ class Abilities {
 		}
 
 		return $items;
+	}
+
+	/**
+	 * List all registered abilities as top-level MCP tools.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	public function list_tools() {
+		$tools = array();
+
+		foreach ( $this->abilities as $name => $ability ) {
+			$tools[] = array(
+				'name'        => $this->ability_to_tool_name( $name ),
+				'description' => $ability['description'],
+				'inputSchema' => $ability['input_schema'],
+				'annotations' => $ability['annotations'],
+			);
+		}
+
+		return $tools;
 	}
 
 	/**
@@ -187,342 +221,6 @@ class Abilities {
 		$this->add_site_abilities();
 		$this->add_style_abilities();
 		$this->add_rest_catalog_abilities();
-	}
-
-	/**
-	 * Content and custom post type abilities.
-	 *
-	 * @return void
-	 */
-	private function add_content_abilities() {
-		$search_schema = $this->schema(
-			array(
-				'search'   => $this->string_prop( 'Search term.' ),
-				'page'     => $this->int_prop( 'Page number.', 1 ),
-				'per_page' => $this->int_prop( 'Items per page.', 10 ),
-				'status'   => $this->string_prop( 'Post status.', 'publish' ),
-			)
-		);
-		$get_schema    = $this->schema( array( 'id' => $this->int_prop( 'Item ID.' ) ), array( 'id' ) );
-		$write_schema  = $this->schema(
-			array(
-				'title'   => $this->string_prop( 'Title.' ),
-				'content' => $this->string_prop( 'Content.' ),
-				'excerpt' => $this->string_prop( 'Excerpt.' ),
-				'status'  => $this->string_prop( 'Status.', 'draft' ),
-			)
-		);
-		$update_schema = $write_schema;
-		$update_schema['properties']['id'] = $this->int_prop( 'Item ID.' );
-		$update_schema['required']         = array( 'id' );
-
-		foreach ( array( 'post' => 'post', 'page' => 'page' ) as $post_type => $singular ) {
-			$plural = 'post' === $post_type ? 'posts' : 'pages';
-			$label  = ucfirst( $singular );
-
-			$this->add_ability( self::INTERNAL_PREFIX . $plural . '-search', 'Search ' . ucfirst( $plural ), 'Search and filter WordPress ' . $plural . ' with pagination', $search_schema, function ( $params ) use ( $post_type ) {
-				return $this->query_posts( $post_type, $params );
-			} );
-			$this->add_ability( self::INTERNAL_PREFIX . 'get-' . $singular, 'Get ' . $label, 'Get a WordPress ' . $singular . ' by ID', $get_schema, function ( $params ) use ( $post_type ) {
-				return $this->get_post_item( (int) $params['id'], $post_type );
-			} );
-			$this->add_ability( self::INTERNAL_PREFIX . 'add-' . $singular, 'Add ' . $label, 'Add a new WordPress ' . $singular, $write_schema, function ( $params ) use ( $post_type ) {
-				return $this->insert_post_item( $post_type, $params );
-			}, false );
-			$this->add_ability( self::INTERNAL_PREFIX . 'update-' . $singular, 'Update ' . $label, 'Update a WordPress ' . $singular . ' by ID', $update_schema, function ( $params ) use ( $post_type ) {
-				return $this->update_post_item( (int) $params['id'], $post_type, $params );
-			}, false );
-			$this->add_ability( self::INTERNAL_PREFIX . 'delete-' . $singular, 'Delete ' . $label, 'Delete a WordPress ' . $singular . ' by ID', $get_schema, function ( $params ) use ( $post_type ) {
-				return $this->delete_post_item( (int) $params['id'], $post_type );
-			}, false );
-		}
-
-		$cpt_schema = $search_schema;
-		$cpt_schema['properties']['post_type'] = $this->string_prop( 'Custom post type name.' );
-		$cpt_schema['required'] = array( 'post_type' );
-
-		$cpt_get_schema = $this->schema(
-			array(
-				'post_type' => $this->string_prop( 'Custom post type name.' ),
-				'id'        => $this->int_prop( 'Item ID.' ),
-			),
-			array( 'post_type', 'id' )
-		);
-		$cpt_write_schema = $write_schema;
-		$cpt_write_schema['properties']['post_type'] = $this->string_prop( 'Custom post type name.' );
-		$cpt_write_schema['required'] = array( 'post_type' );
-		$cpt_update_schema = $cpt_write_schema;
-		$cpt_update_schema['properties']['id'] = $this->int_prop( 'Item ID.' );
-		$cpt_update_schema['required'] = array( 'post_type', 'id' );
-
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-post-types', 'List Post Types', 'List all registered WordPress post types (built-in and custom)', $this->schema(), function () {
-			return $this->list_post_types();
-		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'cpt-search', 'Search Custom Post Type', 'Search and filter content items within a custom post type with pagination', $cpt_schema, function ( $params ) {
-			return $this->query_posts( $params['post_type'], $params );
-		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-cpt', 'Get Custom Post Type Item', 'Get a single content item from a custom post type by ID', $cpt_get_schema, function ( $params ) {
-			return $this->get_post_item( (int) $params['id'], $params['post_type'] );
-		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'add-cpt', 'Add Custom Post Type Item', 'Create a new content item within an existing custom post type', $cpt_write_schema, function ( $params ) {
-			return $this->insert_post_item( $params['post_type'], $params );
-		}, false );
-		$this->add_ability( self::INTERNAL_PREFIX . 'update-cpt', 'Update Custom Post Type Item', 'Update an existing content item in a custom post type by ID', $cpt_update_schema, function ( $params ) {
-			return $this->update_post_item( (int) $params['id'], $params['post_type'], $params );
-		}, false );
-		$this->add_ability( self::INTERNAL_PREFIX . 'delete-cpt', 'Delete Custom Post Type Item', 'Permanently delete a content item from a custom post type by ID', $cpt_get_schema, function ( $params ) {
-			return $this->delete_post_item( (int) $params['id'], $params['post_type'] );
-		}, false );
-	}
-
-	/**
-	 * Taxonomy abilities.
-	 *
-	 * @return void
-	 */
-	private function add_taxonomy_abilities() {
-		$write_schema = $this->schema(
-			array(
-				'name'        => $this->string_prop( 'Term name.' ),
-				'slug'        => $this->string_prop( 'Term slug.' ),
-				'description' => $this->string_prop( 'Description.' ),
-			),
-			array( 'name' )
-		);
-		$update_schema = $write_schema;
-		$update_schema['properties']['id'] = $this->int_prop( 'Term ID.' );
-		$update_schema['required'] = array( 'id' );
-		$delete_schema = $this->schema( array( 'id' => $this->int_prop( 'Term ID.' ) ), array( 'id' ) );
-
-		$this->add_taxonomy_group( 'category', 'categories', 'category', 'Category', $write_schema, $update_schema, $delete_schema );
-		$this->add_taxonomy_group( 'post_tag', 'tags', 'tag', 'Tag', $write_schema, $update_schema, $delete_schema );
-	}
-
-	/**
-	 * Register abilities for one taxonomy.
-	 *
-	 * @param string              $taxonomy Taxonomy name.
-	 * @param string              $slug Tool slug.
-	 * @param string              $singular Singular tool slug.
-	 * @param string              $label Label.
-	 * @param array<string,mixed> $write_schema Write schema.
-	 * @param array<string,mixed> $update_schema Update schema.
-	 * @param array<string,mixed> $delete_schema Delete schema.
-	 * @return void
-	 */
-	private function add_taxonomy_group( $taxonomy, $slug, $singular, $label, $write_schema, $update_schema, $delete_schema ) {
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-' . $slug, 'List ' . $label . 's', 'List all WordPress post ' . strtolower( $label ) . 's', $this->schema(), function () use ( $taxonomy ) {
-			return $this->list_terms( $taxonomy );
-		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'add-' . $singular, 'Add ' . $label, 'Add a new WordPress post ' . strtolower( $label ), $write_schema, function ( $params ) use ( $taxonomy ) {
-			return $this->insert_term( $taxonomy, $params );
-		}, false );
-		$this->add_ability( self::INTERNAL_PREFIX . 'update-' . $singular, 'Update ' . $label, 'Update a WordPress post ' . strtolower( $label ), $update_schema, function ( $params ) use ( $taxonomy ) {
-			return $this->update_term( $taxonomy, (int) $params['id'], $params );
-		}, false );
-		$this->add_ability( self::INTERNAL_PREFIX . 'delete-' . $singular, 'Delete ' . $label, 'Delete a WordPress post ' . strtolower( $label ), $delete_schema, function ( $params ) use ( $taxonomy ) {
-			return $this->delete_term( $taxonomy, (int) $params['id'] );
-		}, false );
-	}
-
-	/**
-	 * Media abilities.
-	 *
-	 * @return void
-	 */
-	private function add_media_abilities() {
-		$list_schema = $this->schema(
-			array(
-				'search'    => $this->string_prop( 'Search term.' ),
-				'mime_type' => $this->string_prop( 'MIME type filter.' ),
-				'page'      => $this->int_prop( 'Page number.', 1 ),
-				'per_page'  => $this->int_prop( 'Items per page.', 10 ),
-			)
-		);
-		$id_schema = $this->schema( array( 'id' => $this->int_prop( 'Media item ID.' ) ), array( 'id' ) );
-		$update_schema = $this->schema(
-			array(
-				'id'          => $this->int_prop( 'Media item ID.' ),
-				'title'       => $this->string_prop( 'Title.' ),
-				'caption'     => $this->string_prop( 'Caption.' ),
-				'description' => $this->string_prop( 'Description.' ),
-				'alt_text'    => $this->string_prop( 'Alt text.' ),
-			),
-			array( 'id' )
-		);
-		$upload_schema = $this->schema(
-			array(
-				'filename' => $this->string_prop( 'File name.' ),
-				'mime_type' => $this->string_prop( 'MIME type.' ),
-				'base64'   => $this->string_prop( 'Base64-encoded file contents.' ),
-				'title'    => $this->string_prop( 'Title.' ),
-			),
-			array( 'filename', 'base64' )
-		);
-
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-media', 'List Media', 'List WordPress media items with pagination and filtering', $list_schema, function ( $params ) {
-			return $this->query_posts( 'attachment', array_merge( array( 'status' => 'inherit' ), $params ) );
-		}, true, 'upload_files' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-media', 'Get Media', 'Get a WordPress media item by ID', $id_schema, function ( $params ) {
-			return $this->get_post_item( (int) $params['id'], 'attachment' );
-		}, true, 'upload_files' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-media-file', 'Get Media File', 'Get the actual file content of a WordPress media item', $id_schema, function ( $params ) {
-			return $this->get_media_file( (int) $params['id'] );
-		}, true, 'upload_files' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'upload-media', 'Upload Media', 'Upload a new media file to WordPress', $upload_schema, function ( $params ) {
-			return $this->upload_media( $params );
-		}, false, 'upload_files' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'update-media', 'Update Media', 'Update a WordPress media item', $update_schema, function ( $params ) {
-			return $this->update_media( (int) $params['id'], $params );
-		}, false, 'upload_files' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'delete-media', 'Delete Media', 'Delete a WordPress media item permanently', $id_schema, function ( $params ) {
-			return $this->delete_post_item( (int) $params['id'], 'attachment' );
-		}, false, 'upload_files' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'search-media', 'Search Media', 'Search WordPress media by title, caption, or description', $list_schema, function ( $params ) {
-			return $this->query_posts( 'attachment', array_merge( array( 'status' => 'inherit' ), $params ) );
-		}, true, 'upload_files' );
-	}
-
-	/**
-	 * Site management abilities.
-	 *
-	 * @return void
-	 */
-	private function add_site_abilities() {
-		$this->add_ability( self::INTERNAL_PREFIX . 'users-search', 'Search Users', 'Search and filter WordPress users with pagination', $this->schema(
-			array(
-				'search'   => $this->string_prop( 'Search term.' ),
-				'role'     => $this->string_prop( 'User role.' ),
-				'page'     => $this->int_prop( 'Page number.', 1 ),
-				'per_page' => $this->int_prop( 'Users per page.', 10 ),
-			)
-		), function ( $params ) {
-			return $this->search_users( $params );
-		}, true, 'list_users' );
-
-		$user_get_schema = $this->schema( array( 'id' => $this->int_prop( 'User ID.' ) ), array( 'id' ) );
-		$user_write_schema = $this->schema(
-			array(
-				'username'   => $this->string_prop( 'Username.' ),
-				'email'      => $this->string_prop( 'Email address.' ),
-				'password'   => $this->string_prop( 'Password.' ),
-				'first_name' => $this->string_prop( 'First name.' ),
-				'last_name'  => $this->string_prop( 'Last name.' ),
-				'role'       => $this->string_prop( 'Role.' ),
-			),
-			array( 'username', 'email', 'password' )
-		);
-		$user_update_schema = $user_write_schema;
-		$user_update_schema['properties']['id'] = $this->int_prop( 'User ID.' );
-		$user_update_schema['required'] = array( 'id' );
-
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-user', 'Get User', 'Get a WordPress user by ID', $user_get_schema, function ( $params ) {
-			return $this->get_user( (int) $params['id'] );
-		}, true, 'list_users' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'add-user', 'Add User', 'Add a new WordPress user', $user_write_schema, function ( $params ) {
-			return $this->insert_user( $params );
-		}, false, 'create_users' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'update-user', 'Update User', 'Update a WordPress user by ID', $user_update_schema, function ( $params ) {
-			return $this->update_user( (int) $params['id'], $params );
-		}, false, 'edit_users' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'delete-user', 'Delete User', 'Delete a WordPress user by ID', $user_get_schema, function ( $params ) {
-			return $this->delete_user( (int) $params['id'] );
-		}, false, 'delete_users' );
-
-		$settings_schema = $this->schema(
-			array(
-				'blogname'        => $this->string_prop( 'Site title.' ),
-				'blogdescription' => $this->string_prop( 'Tagline.' ),
-				'admin_email'     => $this->string_prop( 'Administration email address.' ),
-				'timezone_string' => $this->string_prop( 'Timezone.' ),
-				'date_format'     => $this->string_prop( 'Date format.' ),
-				'time_format'     => $this->string_prop( 'Time format.' ),
-				'start_of_week'   => $this->int_prop( 'Start of week.' ),
-			)
-		);
-
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-general-settings', 'Get General Settings', 'Get WordPress general site settings', $this->schema(), function () {
-			return $this->get_general_settings();
-		}, true, 'manage_options' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'update-general-settings', 'Update General Settings', 'Update WordPress general site settings', $settings_schema, function ( $params ) {
-			return $this->update_general_settings( $params );
-		}, false, 'manage_options' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-site-info', 'Get Site Info', 'Get detailed site information', $this->schema(), function () {
-			return $this->get_site_info();
-		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-active-theme', 'Get Active Theme', 'Get the active theme information', $this->schema(), function () {
-			return $this->get_active_theme();
-		} );
-	}
-
-	/**
-	 * Global styles abilities.
-	 *
-	 * @return void
-	 */
-	private function add_style_abilities() {
-		$id_schema = $this->schema( array( 'id' => $this->int_prop( 'Global styles post ID.' ) ), array( 'id' ) );
-		$update_schema = $this->schema(
-			array(
-				'id'       => $this->int_prop( 'Global styles post ID.' ),
-				'settings' => array( 'type' => 'object', 'description' => 'theme.json settings object.' ),
-				'styles'   => array( 'type' => 'object', 'description' => 'theme.json styles object.' ),
-			),
-			array( 'id' )
-		);
-
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-global-styles', 'Get Global Styles', 'Get a global styles configuration by ID', $id_schema, function ( $params ) {
-			return $this->get_global_styles( (int) $params['id'] );
-		}, true, 'edit_theme_options' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'update-global-styles', 'Update Global Styles', 'Update a global styles configuration', $update_schema, function ( $params ) {
-			return $this->update_global_styles( (int) $params['id'], $params );
-		}, false, 'edit_theme_options' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-active-global-styles', 'Get Active Global Styles', 'Get the currently active global styles for the current theme', $this->schema(), function () {
-			return $this->get_active_global_styles();
-		}, true, 'edit_theme_options' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-active-global-styles-id', 'Get Active Global Styles ID', 'Get the active global styles ID', $this->schema(), function () {
-			return array( 'id' => $this->get_active_global_styles_id() );
-		}, true, 'edit_theme_options' );
-	}
-
-	/**
-	 * REST catalog abilities.
-	 *
-	 * @return void
-	 */
-	private function add_rest_catalog_abilities() {
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-api-functions', 'List API Functions', 'List available WordPress REST API endpoints that support CRUD', $this->schema(
-			array(
-				'namespace' => $this->string_prop( 'REST namespace, such as wp/v2.' ),
-				'methods'   => array(
-					'type'        => 'array',
-					'description' => 'HTTP methods to include.',
-					'items'       => array( 'type' => 'string', 'enum' => array( 'GET', 'POST', 'PATCH', 'DELETE' ) ),
-				),
-				'search'    => $this->string_prop( 'Route search term.' ),
-			)
-		), function ( $params ) {
-			return $this->list_api_functions( $params );
-		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-function-details', 'Get Function Details', 'Get detailed metadata for a specific REST API route and HTTP method', $this->schema(
-			array(
-				'route'  => $this->string_prop( 'REST route.' ),
-				'method' => $this->string_prop( 'HTTP method.' ),
-			),
-			array( 'route', 'method' )
-		), function ( $params ) {
-			return $this->get_function_details( $params['route'], $params['method'] );
-		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'run-api-function', 'Run API Function', 'Execute a REST API request by route, method, and parameters', $this->schema(
-			array(
-				'route'      => $this->string_prop( 'REST route.' ),
-				'method'     => $this->string_prop( 'HTTP method.' ),
-				'parameters' => array( 'type' => 'object', 'description' => 'Request parameters.' ),
-			),
-			array( 'route', 'method' )
-		), function ( $params ) {
-			return $this->run_api_function( $params['route'], $params['method'], isset( $params['parameters'] ) ? $params['parameters'] : array() );
-		}, false );
 	}
 
 	/**
