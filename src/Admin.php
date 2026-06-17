@@ -2,8 +2,10 @@
 /**
  * Admin settings screen.
  *
- * @package WordPressMCP
+ * @package WP_Forge
  */
+
+namespace WP_Forge;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -12,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Renders a user-friendly setup page.
  */
-class WP_Forge_MCP_Admin {
+class Admin {
 	/**
 	 * Register settings page.
 	 *

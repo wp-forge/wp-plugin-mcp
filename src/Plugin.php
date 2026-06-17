@@ -2,8 +2,10 @@
 /**
  * Main plugin bootstrap.
  *
- * @package WordPressMCP
+ * @package WP_Forge
  */
+
+namespace WP_Forge;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -12,32 +14,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Wires WordPress hooks for the MCP plugin.
  */
-class WP_Forge_MCP_Plugin {
+class Plugin {
 	/**
 	 * Singleton instance.
 	 *
-	 * @var WP_Forge_MCP_Plugin|null
+	 * @var Plugin|null
 	 */
 	private static $instance = null;
 
 	/**
 	 * MCP server.
 	 *
-	 * @var WP_Forge_MCP_Server
+	 * @var Server
 	 */
 	private $server;
 
 	/**
 	 * Admin screen.
 	 *
-	 * @var WP_Forge_MCP_Admin
+	 * @var Admin
 	 */
 	private $admin;
 
 	/**
 	 * Get singleton instance.
 	 *
-	 * @return WP_Forge_MCP_Plugin
+	 * @return Plugin
 	 */
 	public static function instance() {
 		if ( null === self::$instance ) {
@@ -51,9 +53,9 @@ class WP_Forge_MCP_Plugin {
 	 * Constructor.
 	 */
 	private function __construct() {
-		$abilities    = new WP_Forge_MCP_Abilities();
-		$this->server = new WP_Forge_MCP_Server( $abilities );
-		$this->admin  = new WP_Forge_MCP_Admin();
+		$abilities    = new Abilities();
+		$this->server = new Server( $abilities );
+		$this->admin  = new Admin();
 	}
 
 	/**

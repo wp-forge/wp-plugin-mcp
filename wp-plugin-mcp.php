@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: WordPress MCP
- * Plugin URI: https://github.com/wpscholar/wp-plugin-mcp
+ * Plugin URI: https://github.com/wp-forge/wp-plugin-mcp
  * Description: A friendly Model Context Protocol endpoint for WordPress sites.
  * Version: 0.1.0
  * Requires at least: 6.5
@@ -10,7 +10,7 @@
  * License: GPL-2.0-or-later
  * Text Domain: wp-plugin-mcp
  *
- * @package WordPressMCP
+ * @package WP_Forge
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,10 +22,18 @@ define( 'WP_FORGE_MCP_FILE', __FILE__ );
 define( 'WP_FORGE_MCP_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WP_FORGE_MCP_URL', plugin_dir_url( __FILE__ ) );
 
-require_once WP_FORGE_MCP_DIR . 'includes/class-wp-forge-mcp-response.php';
-require_once WP_FORGE_MCP_DIR . 'includes/class-wp-forge-mcp-abilities.php';
-require_once WP_FORGE_MCP_DIR . 'includes/class-wp-forge-mcp-server.php';
-require_once WP_FORGE_MCP_DIR . 'includes/class-wp-forge-mcp-admin.php';
-require_once WP_FORGE_MCP_DIR . 'includes/class-wp-forge-mcp-plugin.php';
+$autoload = WP_FORGE_MCP_DIR . 'vendor/autoload.php';
 
-WP_Forge_MCP_Plugin::instance()->init();
+if ( file_exists( $autoload ) ) {
+	require_once $autoload;
+} else {
+	add_action(
+		'admin_notices',
+		static function () {
+			echo '<div class="notice notice-error"><p>' . esc_html__( 'WordPress MCP needs Composer dependencies. Run composer install in the plugin directory.', 'wp-plugin-mcp' ) . '</p></div>';
+		}
+	);
+	return;
+}
+
+WP_Forge\Plugin::instance()->init();

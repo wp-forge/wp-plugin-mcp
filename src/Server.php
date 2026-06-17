@@ -2,8 +2,10 @@
 /**
  * MCP JSON-RPC server.
  *
- * @package WordPressMCP
+ * @package WP_Forge
  */
+
+namespace WP_Forge;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -12,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Handles MCP requests at /wp-json/mcp/wp-forge.
  */
-class WP_Forge_MCP_Server {
+class Server {
 	const REST_NAMESPACE = 'mcp';
 	const REST_ROUTE     = '/wp-forge';
 	const SESSION_TTL    = 86400;
@@ -20,16 +22,16 @@ class WP_Forge_MCP_Server {
 	/**
 	 * Ability registry.
 	 *
-	 * @var WP_Forge_MCP_Abilities
+	 * @var Abilities
 	 */
 	private $abilities;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param WP_Forge_MCP_Abilities $abilities Ability registry.
+	 * @param Abilities $abilities Ability registry.
 	 */
-	public function __construct( WP_Forge_MCP_Abilities $abilities ) {
+	public function __construct( Abilities $abilities ) {
 		$this->abilities = $abilities;
 	}
 
@@ -74,8 +76,8 @@ class WP_Forge_MCP_Server {
 	/**
 	 * Handle a REST POST request.
 	 *
-	 * @param WP_REST_Request $request REST request.
-	 * @return WP_REST_Response
+	 * @param \WP_REST_Request $request REST request.
+	 * @return \WP_REST_Response
 	 */
 	public function handle_rest_request( $request ) {
 		$body = $request->get_json_params();
@@ -87,14 +89,14 @@ class WP_Forge_MCP_Server {
 		$response = $this->handle( $body, $request->get_header( 'Mcp-Session-Id' ) );
 
 		if ( null === $response ) {
-			return new WP_REST_Response( null, 202 );
+			return new \WP_REST_Response( null, 202 );
 		}
 
 		$status        = isset( $response['_http_status'] ) ? (int) $response['_http_status'] : 200;
 		$session_id    = isset( $response['_session_id'] ) ? $response['_session_id'] : '';
 		unset( $response['_http_status'], $response['_session_id'] );
 
-		$rest_response = new WP_REST_Response( $response, $status );
+		$rest_response = new \WP_REST_Response( $response, $status );
 		if ( $session_id ) {
 			$rest_response->header( 'Mcp-Session-Id', $session_id );
 		}
@@ -156,7 +158,7 @@ class WP_Forge_MCP_Server {
 				'id'          => $id,
 				'result'      => array(
 					'protocolVersion' => isset( $params['protocolVersion'] ) ? $params['protocolVersion'] : '2025-06-18',
-					'capabilities'    => array( 'tools' => new stdClass() ),
+						'capabilities'    => array( 'tools' => new \stdClass() ),
 					'serverInfo'      => array(
 						'name'    => 'WordPress MCP',
 						'version' => defined( 'WP_FORGE_MCP_VERSION' ) ? WP_FORGE_MCP_VERSION : '0.1.0',
@@ -196,14 +198,14 @@ class WP_Forge_MCP_Server {
 	private function call_gateway_tool( $tool_name, $arguments ) {
 		switch ( $tool_name ) {
 			case 'wp-forge-list-abilities':
-				$payload = WP_Forge_MCP_Response::success( $this->abilities->list_abilities( $arguments ) );
+				$payload = Response::success( $this->abilities->list_abilities( $arguments ) );
 				break;
 			case 'wp-forge-get-ability-schema':
 				if ( empty( $arguments['ability_name'] ) ) {
 					return $this->tool_error( 'ability_name is required.' );
 				}
 				$schema = $this->abilities->get_schema( $arguments['ability_name'] );
-				$payload = $schema ? WP_Forge_MCP_Response::success( $schema ) : WP_Forge_MCP_Response::error( 'Unknown ability: ' . $arguments['ability_name'], 404 );
+				$payload = $schema ? Response::success( $schema ) : Response::error( 'Unknown ability: ' . $arguments['ability_name'], 404 );
 				break;
 			case 'wp-forge-call-ability':
 				if ( empty( $arguments['ability_name'] ) ) {
@@ -380,19 +382,19 @@ class WP_Forge_MCP_Server {
 	/**
 	 * DELETE handler.
 	 *
-	 * @return WP_REST_Response
+	 * @return \WP_REST_Response
 	 */
 	public function delete_session() {
-		return new WP_REST_Response( null, 204 );
+		return new \WP_REST_Response( null, 204 );
 	}
 
 	/**
 	 * GET handler until SSE is implemented.
 	 *
-	 * @return WP_REST_Response
+	 * @return \WP_REST_Response
 	 */
 	public function sse_not_available() {
-		return new WP_REST_Response( array( 'message' => 'SSE is not available yet. Use POST for MCP messages.' ), 405 );
+		return new \WP_REST_Response( array( 'message' => 'SSE is not available yet. Use POST for MCP messages.' ), 405 );
 	}
 
 	/**

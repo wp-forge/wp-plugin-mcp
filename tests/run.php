@@ -2,7 +2,7 @@
 /**
  * Lightweight unit tests for WordPress MCP.
  *
- * @package WordPressMCP
+ * @package WP_Forge
  */
 
 define( 'ABSPATH', dirname( __DIR__ ) . '/' );
@@ -14,9 +14,10 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
 	}
 }
 
-require_once dirname( __DIR__ ) . '/includes/class-wp-forge-mcp-response.php';
-require_once dirname( __DIR__ ) . '/includes/class-wp-forge-mcp-abilities.php';
-require_once dirname( __DIR__ ) . '/includes/class-wp-forge-mcp-server.php';
+require_once dirname( __DIR__ ) . '/vendor/autoload.php';
+
+use WP_Forge\Abilities;
+use WP_Forge\Server;
 
 $tests_run = 0;
 
@@ -33,7 +34,7 @@ function assert_same( $expected, $actual, $message ) {
 	assert_true( $expected === $actual, $message . ' Expected ' . var_export( $expected, true ) . ', got ' . var_export( $actual, true ) );
 }
 
-$abilities = new WP_Forge_MCP_Abilities();
+$abilities = new Abilities();
 $all       = $abilities->list_abilities();
 $names     = array_column( $all, 'name' );
 
@@ -42,6 +43,57 @@ assert_true( in_array( 'wp-forge-posts-search', $names, true ), 'Expected posts 
 assert_true( in_array( 'wp-forge-get-site-info', $names, true ), 'Expected site info ability.' );
 assert_true( in_array( 'wp-forge-run-api-function', $names, true ), 'Expected REST runner ability.' );
 assert_true( ! in_array( 'wp-forge-wc-products-search', $names, true ), 'WooCommerce abilities should not be registered.' );
+
+$expected_named_tools = array(
+	'wp-forge-posts-search',
+	'wp-forge-get-post',
+	'wp-forge-add-post',
+	'wp-forge-update-post',
+	'wp-forge-delete-post',
+	'wp-forge-list-categories',
+	'wp-forge-add-category',
+	'wp-forge-update-category',
+	'wp-forge-delete-category',
+	'wp-forge-list-tags',
+	'wp-forge-add-tag',
+	'wp-forge-update-tag',
+	'wp-forge-delete-tag',
+	'wp-forge-pages-search',
+	'wp-forge-get-page',
+	'wp-forge-add-page',
+	'wp-forge-update-page',
+	'wp-forge-delete-page',
+	'wp-forge-list-media',
+	'wp-forge-get-media',
+	'wp-forge-get-media-file',
+	'wp-forge-upload-media',
+	'wp-forge-update-media',
+	'wp-forge-delete-media',
+	'wp-forge-search-media',
+	'wp-forge-list-post-types',
+	'wp-forge-cpt-search',
+	'wp-forge-get-cpt',
+	'wp-forge-add-cpt',
+	'wp-forge-update-cpt',
+	'wp-forge-delete-cpt',
+	'wp-forge-users-search',
+	'wp-forge-get-user',
+	'wp-forge-add-user',
+	'wp-forge-update-user',
+	'wp-forge-delete-user',
+	'wp-forge-get-general-settings',
+	'wp-forge-update-general-settings',
+	'wp-forge-get-site-info',
+	'wp-forge-get-global-styles',
+	'wp-forge-update-global-styles',
+	'wp-forge-get-active-global-styles',
+	'wp-forge-get-active-global-styles-id',
+	'wp-forge-get-active-theme',
+);
+
+foreach ( $expected_named_tools as $expected_name ) {
+	assert_true( in_array( $expected_name, $names, true ), 'Expected upstream non-WooCommerce tool: ' . $expected_name );
+}
 
 foreach ( $names as $name ) {
 	assert_true( 0 === strpos( $name, 'wp-forge-' ), 'Every ability should use the wp-forge namespace.' );
@@ -59,7 +111,7 @@ $missing_runtime = $abilities->call( 'wp-forge-posts-search', array() );
 assert_same( 'error', $missing_runtime['status'], 'WordPress-dependent ability should report missing runtime in unit tests.' );
 assert_same( 500, $missing_runtime['statusCode'], 'Missing WordPress runtime should be a server-side ability error.' );
 
-$server = new WP_Forge_MCP_Server( $abilities );
+$server = new Server( $abilities );
 
 $needs_session = $server->handle(
 	array(

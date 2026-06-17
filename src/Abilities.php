@@ -2,8 +2,10 @@
 /**
  * Ability catalog for WordPress MCP.
  *
- * @package WordPressMCP
+ * @package WP_Forge
  */
+
+namespace WP_Forge;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -12,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Registers wp-forge abilities and dispatches calls.
  */
-class WP_Forge_MCP_Abilities {
+class Abilities {
 	const INTERNAL_PREFIX = 'wp-forge/';
 	const TOOL_PREFIX     = 'wp-forge-';
 
@@ -101,23 +103,23 @@ class WP_Forge_MCP_Abilities {
 		$internal = $this->tool_to_ability_name( $name );
 
 		if ( ! isset( $this->abilities[ $internal ] ) ) {
-			return WP_Forge_MCP_Response::error( 'Unknown ability: ' . $name, 404 );
+			return Response::error( 'Unknown ability: ' . $name, 404 );
 		}
 
 		$capability = isset( $this->abilities[ $internal ]['capability'] ) ? $this->abilities[ $internal ]['capability'] : 'edit_posts';
 		if ( function_exists( 'current_user_can' ) && ! current_user_can( $capability ) ) {
-			return WP_Forge_MCP_Response::error( 'Access denied for ability: ' . $this->ability_to_tool_name( $internal ), 403 );
+			return Response::error( 'Access denied for ability: ' . $this->ability_to_tool_name( $internal ), 403 );
 		}
 
 		$callback = $this->abilities[ $internal ]['callback'];
 		$result   = call_user_func( $callback, is_array( $parameters ) ? $parameters : array() );
-		$result   = WP_Forge_MCP_Response::unwrap_wp_error( $result );
+		$result   = Response::unwrap_wp_error( $result );
 
 		if ( is_array( $result ) && isset( $result['statusCode'], $result['status'], $result['message'] ) ) {
 			return $result;
 		}
 
-		return WP_Forge_MCP_Response::success( $result );
+		return Response::success( $result );
 	}
 
 	/**
@@ -602,7 +604,7 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function require_wordpress() {
 		if ( ! function_exists( 'get_posts' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		return null;
@@ -651,7 +653,7 @@ class WP_Forge_MCP_Abilities {
 
 		$post = get_post( $id );
 		if ( ! $post || $post_type !== $post->post_type ) {
-			return WP_Forge_MCP_Response::error( 'Item not found.', 404 );
+			return Response::error( 'Item not found.', 404 );
 		}
 
 		return $this->format_post( $post );
@@ -681,7 +683,7 @@ class WP_Forge_MCP_Abilities {
 			true
 		);
 
-		return WP_Forge_MCP_Response::unwrap_wp_error( $id );
+		return Response::unwrap_wp_error( $id );
 	}
 
 	/**
@@ -705,7 +707,7 @@ class WP_Forge_MCP_Abilities {
 			}
 		}
 
-		return WP_Forge_MCP_Response::unwrap_wp_error( wp_update_post( $post, true ) );
+		return Response::unwrap_wp_error( wp_update_post( $post, true ) );
 	}
 
 	/**
@@ -754,7 +756,7 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function list_post_types() {
 		if ( ! function_exists( 'get_post_types' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		$types = get_post_types( array(), 'objects' );
@@ -779,7 +781,7 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function list_terms( $taxonomy ) {
 		if ( ! function_exists( 'get_terms' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		return array_map( array( $this, 'format_term' ), get_terms( array( 'taxonomy' => $taxonomy, 'hide_empty' => false ) ) );
@@ -794,10 +796,10 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function insert_term( $taxonomy, $params ) {
 		if ( ! function_exists( 'wp_insert_term' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
-		return WP_Forge_MCP_Response::unwrap_wp_error( wp_insert_term( $params['name'], $taxonomy, $this->term_args( $params ) ) );
+		return Response::unwrap_wp_error( wp_insert_term( $params['name'], $taxonomy, $this->term_args( $params ) ) );
 	}
 
 	/**
@@ -810,10 +812,10 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function update_term( $taxonomy, $id, $params ) {
 		if ( ! function_exists( 'wp_update_term' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
-		return WP_Forge_MCP_Response::unwrap_wp_error( wp_update_term( $id, $taxonomy, $this->term_args( $params ) ) );
+		return Response::unwrap_wp_error( wp_update_term( $id, $taxonomy, $this->term_args( $params ) ) );
 	}
 
 	/**
@@ -825,10 +827,10 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function delete_term( $taxonomy, $id ) {
 		if ( ! function_exists( 'wp_delete_term' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
-		return WP_Forge_MCP_Response::unwrap_wp_error( wp_delete_term( $id, $taxonomy ) );
+		return Response::unwrap_wp_error( wp_delete_term( $id, $taxonomy ) );
 	}
 
 	/**
@@ -872,12 +874,12 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function get_media_file( $id ) {
 		if ( ! function_exists( 'get_attached_file' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		$file = get_attached_file( $id );
 		if ( ! $file || ! file_exists( $file ) ) {
-			return WP_Forge_MCP_Response::error( 'File not found.', 404 );
+			return Response::error( 'File not found.', 404 );
 		}
 
 		return array(
@@ -896,17 +898,17 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function upload_media( $params ) {
 		if ( ! function_exists( 'wp_upload_bits' ) || ! function_exists( 'wp_insert_attachment' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		$bits = base64_decode( $params['base64'], true );
 		if ( false === $bits ) {
-			return WP_Forge_MCP_Response::error( 'Invalid base64 file contents.', 400 );
+			return Response::error( 'Invalid base64 file contents.', 400 );
 		}
 
 		$upload = wp_upload_bits( $params['filename'], null, $bits );
 		if ( ! empty( $upload['error'] ) ) {
-			return WP_Forge_MCP_Response::error( $upload['error'], 400 );
+			return Response::error( $upload['error'], 400 );
 		}
 
 		$id = wp_insert_attachment(
@@ -918,7 +920,7 @@ class WP_Forge_MCP_Abilities {
 			$upload['file']
 		);
 
-		return WP_Forge_MCP_Response::unwrap_wp_error( $id );
+		return Response::unwrap_wp_error( $id );
 	}
 
 	/**
@@ -939,7 +941,7 @@ class WP_Forge_MCP_Abilities {
 			update_post_meta( $id, '_wp_attachment_image_alt', $params['alt_text'] );
 		}
 
-		return function_exists( 'wp_update_post' ) ? WP_Forge_MCP_Response::unwrap_wp_error( wp_update_post( $post, true ) ) : WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+		return function_exists( 'wp_update_post' ) ? Response::unwrap_wp_error( wp_update_post( $post, true ) ) : Response::error( 'This ability requires a WordPress runtime.', 500 );
 	}
 
 	/**
@@ -950,7 +952,7 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function search_users( $params ) {
 		if ( ! function_exists( 'get_users' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		$args = array(
@@ -973,11 +975,11 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function get_user( $id ) {
 		if ( ! function_exists( 'get_user_by' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		$user = get_user_by( 'id', $id );
-		return $user ? $this->format_user( $user ) : WP_Forge_MCP_Response::error( 'User not found.', 404 );
+		return $user ? $this->format_user( $user ) : Response::error( 'User not found.', 404 );
 	}
 
 	/**
@@ -988,10 +990,10 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function insert_user( $params ) {
 		if ( ! function_exists( 'wp_insert_user' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
-		return WP_Forge_MCP_Response::unwrap_wp_error( wp_insert_user( $this->user_args( $params ) ) );
+		return Response::unwrap_wp_error( wp_insert_user( $this->user_args( $params ) ) );
 	}
 
 	/**
@@ -1003,12 +1005,12 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function update_user( $id, $params ) {
 		if ( ! function_exists( 'wp_update_user' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		$args       = $this->user_args( $params );
 		$args['ID'] = $id;
-		return WP_Forge_MCP_Response::unwrap_wp_error( wp_update_user( $args ) );
+		return Response::unwrap_wp_error( wp_update_user( $args ) );
 	}
 
 	/**
@@ -1019,7 +1021,7 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function delete_user( $id ) {
 		if ( ! function_exists( 'wp_delete_user' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		return (bool) wp_delete_user( $id );
@@ -1072,7 +1074,7 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function get_general_settings() {
 		if ( ! function_exists( 'get_option' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		$keys = array( 'blogname', 'blogdescription', 'admin_email', 'timezone_string', 'date_format', 'time_format', 'start_of_week' );
@@ -1091,7 +1093,7 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function update_general_settings( $params ) {
 		if ( ! function_exists( 'update_option' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		foreach ( array_keys( $this->get_general_settings() ) as $key ) {
@@ -1109,7 +1111,7 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function get_site_info() {
 		if ( ! function_exists( 'get_bloginfo' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		return array(
@@ -1130,7 +1132,7 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function get_active_theme() {
 		if ( ! function_exists( 'wp_get_theme' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		$theme = wp_get_theme();
@@ -1179,7 +1181,7 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function get_active_global_styles() {
 		$id = $this->get_active_global_styles_id();
-		return $id ? $this->get_global_styles( $id ) : WP_Forge_MCP_Response::error( 'Active global styles were not found.', 404 );
+		return $id ? $this->get_global_styles( $id ) : Response::error( 'Active global styles were not found.', 404 );
 	}
 
 	/**
@@ -1208,7 +1210,7 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function list_api_functions( $params ) {
 		if ( ! function_exists( 'rest_get_server' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		$routes = rest_get_server()->get_routes();
@@ -1259,12 +1261,12 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function get_function_details( $route, $method ) {
 		if ( ! function_exists( 'rest_get_server' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		$routes = rest_get_server()->get_routes();
 		if ( empty( $routes[ $route ] ) ) {
-			return WP_Forge_MCP_Response::error( 'REST route not found.', 404 );
+			return Response::error( 'REST route not found.', 404 );
 		}
 
 		foreach ( $routes[ $route ] as $handler ) {
@@ -1278,7 +1280,7 @@ class WP_Forge_MCP_Abilities {
 			}
 		}
 
-		return WP_Forge_MCP_Response::error( 'REST method not found for route.', 404 );
+		return Response::error( 'REST method not found for route.', 404 );
 	}
 
 	/**
@@ -1291,13 +1293,13 @@ class WP_Forge_MCP_Abilities {
 	 */
 	private function run_api_function( $route, $method, $params ) {
 		if ( '/mcp/wp-forge' === $route ) {
-			return WP_Forge_MCP_Response::error( 'The MCP transport route cannot be called through this tool.', 400 );
+			return Response::error( 'The MCP transport route cannot be called through this tool.', 400 );
 		}
 		if ( ! class_exists( 'WP_REST_Request' ) || ! function_exists( 'rest_do_request' ) ) {
-			return WP_Forge_MCP_Response::error( 'This ability requires a WordPress runtime.', 500 );
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
-		$request = new WP_REST_Request( strtoupper( $method ), $route );
+		$request = new \WP_REST_Request( strtoupper( $method ), $route );
 		foreach ( $params as $key => $value ) {
 			$request->set_param( $key, $value );
 		}

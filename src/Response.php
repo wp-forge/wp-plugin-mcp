@@ -2,8 +2,10 @@
 /**
  * Response helpers for WordPress MCP ability calls.
  *
- * @package WordPressMCP
+ * @package WP_Forge
  */
+
+namespace WP_Forge;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -12,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Formats ability responses consistently for MCP clients.
  */
-class WP_Forge_MCP_Response {
+class Response {
 	/**
 	 * Build a successful ability response.
 	 *
