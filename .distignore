@@ -5,6 +5,7 @@
 composer.lock
 node_modules/
 tests/
+build/
 vendor/bin/
 *.zip
 *.log
