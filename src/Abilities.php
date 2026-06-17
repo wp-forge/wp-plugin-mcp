@@ -204,7 +204,7 @@ class Abilities {
 			'description'  => $description,
 			'input_schema' => $input_schema,
 			'callback'     => $callback,
-			'annotations'  => array( 'readonly' => (bool) $read_only ),
+			'annotations'  => array( 'readOnlyHint' => (bool) $read_only ),
 			'capability'   => $capability,
 		);
 	}
@@ -233,7 +233,7 @@ class Abilities {
 	private function schema( $properties = array(), $required = array() ) {
 		$schema = array(
 			'type'                 => 'object',
-			'properties'           => $properties,
+			'properties'           => $properties ? $properties : new \stdClass(),
 			'additionalProperties' => false,
 		);
 

@@ -1,0 +1,64 @@
+name: Integration Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  playground:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install Node dependencies
+        run: npm install
+
+      - name: Start Playground
+        run: |
+          npm run playground:start > /tmp/wp-plugin-mcp-playground.log 2>&1 &
+          echo $! > /tmp/wp-plugin-mcp-playground.pid
+
+      - name: Wait for Playground
+        run: |
+          for attempt in {1..60}; do
+            if curl --silent --fail http://127.0.0.1:9400/ >/dev/null; then
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          cat /tmp/wp-plugin-mcp-playground.log
+          exit 1
+
+      - name: Run MCP endpoint integration test
+        run: npm run test:playground
+
+      - name: Stop Playground
+        if: always()
+        run: |
+          if [ -f /tmp/wp-plugin-mcp-playground.pid ]; then
+            kill "$(cat /tmp/wp-plugin-mcp-playground.pid)" || true
+          fi
+
+      - name: Show Playground logs
+        if: failure()
+        run: cat /tmp/wp-plugin-mcp-playground.log

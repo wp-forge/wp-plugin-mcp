@@ -105,7 +105,7 @@ assert_same( array( 'wp-forge-posts-search' ), array_column( $filtered, 'name' )
 
 $schema = $abilities->get_schema( 'wp-forge-add-post' );
 assert_same( 'wp-forge-add-post', $schema['name'], 'Schema lookup should accept MCP tool names.' );
-assert_same( false, $schema['annotations']['readonly'], 'Add post should be marked writable.' );
+assert_same( false, $schema['annotations']['readOnlyHint'], 'Add post should be marked writable.' );
 
 $direct_tools = $abilities->list_tools();
 $direct_tool_names = array_column( $direct_tools, 'name' );
@@ -115,6 +115,12 @@ assert_true( in_array( 'wp-forge-get-active-theme', $direct_tool_names, true ), 
 assert_true( ! in_array( 'wp-forge-list-abilities', $direct_tool_names, true ), 'Gateway list tool should not be exposed.' );
 assert_true( ! in_array( 'wp-forge-get-ability-schema', $direct_tool_names, true ), 'Gateway schema tool should not be exposed.' );
 assert_true( ! in_array( 'wp-forge-call-ability', $direct_tool_names, true ), 'Gateway call tool should not be exposed.' );
+
+$site_info_tool = array_values( array_filter( $direct_tools, static function ( $tool ) {
+	return 'wp-forge-get-site-info' === $tool['name'];
+} ) )[0];
+assert_true( $site_info_tool['inputSchema']['properties'] instanceof stdClass, 'No-argument tool properties should serialize as a JSON object.' );
+assert_same( true, $site_info_tool['annotations']['readOnlyHint'], 'Read-only tools should use the MCP readOnlyHint annotation.' );
 
 $missing_runtime = $abilities->call( 'wp-forge-posts-search', array() );
 assert_same( 'error', $missing_runtime['status'], 'WordPress-dependent ability should report missing runtime in unit tests.' );

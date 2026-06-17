@@ -1,0 +1,11 @@
+{
+  "name": "wp-plugin-mcp",
+  "private": true,
+  "scripts": {
+    "playground:start": "cli server --blueprint=playground/blueprint.json --mount=$(pwd):/wordpress/wp-content/plugins/wp-plugin-mcp --port=9400 --login",
+    "test:playground": "node tests/integration/mcp-endpoint.mjs"
+  },
+  "devDependencies": {
+    "@wp-playground/cli": "^1.0.0"
+  }
+}

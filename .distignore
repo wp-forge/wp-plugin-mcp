@@ -5,7 +5,10 @@
 composer.lock
 node_modules/
 tests/
+playground/
 build/
+package.json
+package-lock.json
 vendor/bin/
 *.zip
 *.log

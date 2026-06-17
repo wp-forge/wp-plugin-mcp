@@ -160,3 +160,20 @@ Run the test suite:
 ```bash
 composer test
 ```
+
+## Playground Testing
+
+Start a local WordPress Playground site with this plugin mounted and activated:
+
+```bash
+npm install
+npm run playground:start
+```
+
+Test the MCP endpoint:
+
+```bash
+npm run test:playground
+```
+
+By default, the endpoint test uses `http://127.0.0.1:9400/wp-json/mcp/wp-forge` and authenticates with Playground's local auto-login flow. For remote sites, set `WP_API_URL`, `WP_API_USERNAME`, and `WP_API_PASSWORD` to use a WordPress Application Password.
