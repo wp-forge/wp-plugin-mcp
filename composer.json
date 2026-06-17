@@ -1,0 +1,12 @@
+{
+  "name": "wpscholar/wp-plugin-mcp",
+  "description": "A friendly WordPress MCP plugin exposing wp-forge tools.",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "test": "php tests/run.php"
+  },
+  "require": {
+    "php": ">=7.4"
+  }
+}
