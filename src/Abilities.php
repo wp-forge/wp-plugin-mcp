@@ -742,6 +742,10 @@ class Abilities {
 	 * @return mixed
 	 */
 	private function delete_user( $id ) {
+		if ( defined( 'ABSPATH' ) && file_exists( ABSPATH . 'wp-admin/includes/user.php' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/user.php';
+		}
+
 		if ( ! function_exists( 'wp_delete_user' ) ) {
 			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
@@ -913,7 +917,7 @@ class Abilities {
 	 */
 	private function get_active_global_styles_id() {
 		if ( class_exists( 'WP_Theme_JSON_Resolver' ) && method_exists( 'WP_Theme_JSON_Resolver', 'get_user_global_styles_post_id' ) ) {
-			return (int) WP_Theme_JSON_Resolver::get_user_global_styles_post_id();
+			return (int) \WP_Theme_JSON_Resolver::get_user_global_styles_post_id();
 		}
 
 		if ( function_exists( 'get_posts' ) ) {
