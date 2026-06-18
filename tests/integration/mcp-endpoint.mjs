@@ -22,12 +22,40 @@ function cookieHeader(cookies) {
 
 async function getPlaygroundAuthHeaders() {
   const cookies = new Map();
+  const loginUrl = new URL('/wp-login.php', endpointUrl.origin);
+  const playgroundUsername = process.env.WP_PLAYGROUND_USERNAME || 'admin';
+  const playgroundPassword = process.env.WP_PLAYGROUND_PASSWORD || 'password';
+
+  let response = await fetch(loginUrl, { redirect: 'manual' });
+  setCookiesFromResponse(response, cookies);
+
+  response = await fetch(loginUrl, {
+    method: 'POST',
+    redirect: 'manual',
+    headers: {
+      Cookie: cookieHeader(cookies),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      log: playgroundUsername,
+      pwd: playgroundPassword,
+      'wp-submit': 'Log In',
+      redirect_to: new URL('/wp-admin/post-new.php', endpointUrl.origin).toString(),
+      testcookie: '1',
+    }),
+  });
+  setCookiesFromResponse(response, cookies);
+
   const postEditorUrl = new URL('/wp-admin/post-new.php', endpointUrl.origin);
-  let response = await fetch(postEditorUrl, { redirect: 'manual' });
+  response = await fetch(postEditorUrl, {
+    redirect: 'manual',
+    headers: { Cookie: cookieHeader(cookies) },
+  });
   setCookiesFromResponse(response, cookies);
 
   if (response.status >= 300 && response.status < 400 && response.headers.get('location')) {
     response = await fetch(new URL(response.headers.get('location'), endpointUrl.origin), {
+      redirect: 'manual',
       headers: { Cookie: cookieHeader(cookies) },
     });
     setCookiesFromResponse(response, cookies);
@@ -113,15 +141,93 @@ assert(listed.status === 200, `tools/list returned HTTP ${listed.status}`);
 const tools = listed.body?.result?.tools;
 assert(Array.isArray(tools), 'tools/list did not return result.tools array');
 assert(tools.length > 0, 'tools/list returned no tools');
-assert(tools.some((tool) => tool.name === 'wp-forge-posts-search'), 'wp-forge-posts-search was not listed');
-assert(tools.some((tool) => tool.name === 'wp-forge-get-site-info'), 'wp-forge-get-site-info was not listed');
-assert(tools.some((tool) => tool.name === 'wp-forge-list-plugins'), 'wp-forge-list-plugins was not listed');
-assert(tools.some((tool) => tool.name === 'wp-forge-list-themes'), 'wp-forge-list-themes was not listed');
-assert(tools.some((tool) => tool.name === 'wp-forge-list-options'), 'wp-forge-list-options was not listed');
-assert(tools.some((tool) => tool.name === 'wp-forge-list-comments'), 'wp-forge-list-comments was not listed');
-assert(tools.some((tool) => tool.name === 'wp-forge-list-taxonomies'), 'wp-forge-list-taxonomies was not listed');
-assert(tools.some((tool) => tool.name === 'wp-forge-get-site-health-info'), 'wp-forge-get-site-health-info was not listed');
-assert(tools.some((tool) => tool.name === 'wp-forge-read-error-log'), 'wp-forge-read-error-log was not listed');
+
+const expectedTools = [
+  'wp-forge-posts-search',
+  'wp-forge-get-post',
+  'wp-forge-add-post',
+  'wp-forge-update-post',
+  'wp-forge-delete-post',
+  'wp-forge-list-categories',
+  'wp-forge-add-category',
+  'wp-forge-update-category',
+  'wp-forge-delete-category',
+  'wp-forge-list-tags',
+  'wp-forge-add-tag',
+  'wp-forge-update-tag',
+  'wp-forge-delete-tag',
+  'wp-forge-list-taxonomies',
+  'wp-forge-list-taxonomy-terms',
+  'wp-forge-add-taxonomy-term',
+  'wp-forge-update-taxonomy-term',
+  'wp-forge-delete-taxonomy-term',
+  'wp-forge-pages-search',
+  'wp-forge-get-page',
+  'wp-forge-add-page',
+  'wp-forge-update-page',
+  'wp-forge-delete-page',
+  'wp-forge-list-media',
+  'wp-forge-get-media',
+  'wp-forge-get-media-file',
+  'wp-forge-upload-media',
+  'wp-forge-update-media',
+  'wp-forge-delete-media',
+  'wp-forge-search-media',
+  'wp-forge-list-post-types',
+  'wp-forge-cpt-search',
+  'wp-forge-get-cpt',
+  'wp-forge-add-cpt',
+  'wp-forge-update-cpt',
+  'wp-forge-delete-cpt',
+  'wp-forge-users-search',
+  'wp-forge-get-user',
+  'wp-forge-add-user',
+  'wp-forge-update-user',
+  'wp-forge-delete-user',
+  'wp-forge-get-general-settings',
+  'wp-forge-update-general-settings',
+  'wp-forge-get-site-info',
+  'wp-forge-list-plugins',
+  'wp-forge-install-plugin',
+  'wp-forge-activate-plugin',
+  'wp-forge-deactivate-plugin',
+  'wp-forge-uninstall-plugin',
+  'wp-forge-list-themes',
+  'wp-forge-install-theme',
+  'wp-forge-activate-theme',
+  'wp-forge-delete-theme',
+  'wp-forge-list-options',
+  'wp-forge-get-option',
+  'wp-forge-update-option',
+  'wp-forge-delete-option',
+  'wp-forge-list-comments',
+  'wp-forge-get-comment',
+  'wp-forge-add-comment',
+  'wp-forge-update-comment',
+  'wp-forge-delete-comment',
+  'wp-forge-approve-comment',
+  'wp-forge-spam-comment',
+  'wp-forge-get-site-health-info',
+  'wp-forge-list-site-health-tests',
+  'wp-forge-get-error-log-path',
+  'wp-forge-read-error-log',
+  'wp-forge-run-wp-cli-command',
+  'wp-forge-get-global-styles',
+  'wp-forge-update-global-styles',
+  'wp-forge-get-active-global-styles',
+  'wp-forge-get-active-global-styles-id',
+  'wp-forge-get-active-theme',
+  'wp-forge-list-api-functions',
+  'wp-forge-get-function-details',
+  'wp-forge-run-api-function',
+];
+
+const toolNames = tools.map((tool) => tool.name);
+assert(tools.length === expectedTools.length, `tools/list returned ${tools.length} tools, expected ${expectedTools.length}`);
+for (const expectedTool of expectedTools) {
+  assert(toolNames.includes(expectedTool), `${expectedTool} was not listed`);
+}
+
 assert(!tools.some((tool) => tool.name === 'wp-forge-call-ability'), 'gateway tool wp-forge-call-ability should not be listed');
 assert(tools.every((tool) => !Array.isArray(tool.inputSchema?.properties)), 'tool inputSchema.properties must be JSON objects, not arrays');
 
@@ -180,13 +286,28 @@ const siteHealth = await callTool(9, 'wp-forge-list-site-health-tests');
 assert(siteHealth.status === 200, `wp-forge-list-site-health-tests returned HTTP ${siteHealth.status}`);
 assert(siteHealth.body?.result?.structuredContent?.status === 'success', 'wp-forge-list-site-health-tests did not return success');
 
-const siteInfo = await callTool(10, 'wp-forge-get-site-info');
+const siteHealthInfo = await callTool(10, 'wp-forge-get-site-health-info');
+assert(siteHealthInfo.status === 200, `wp-forge-get-site-health-info returned HTTP ${siteHealthInfo.status}`);
+assert(siteHealthInfo.body?.result?.structuredContent?.status === 'success', 'wp-forge-get-site-health-info did not return success');
+assert(siteHealthInfo.body.result.structuredContent.message['wp-core'], 'wp-forge-get-site-health-info did not include wp-core debug data');
+
+const siteInfo = await callTool(11, 'wp-forge-get-site-info');
 assert(siteInfo.status === 200, `wp-forge-get-site-info returned HTTP ${siteInfo.status}`);
 assert(siteInfo.body?.result?.structuredContent?.status === 'success', 'wp-forge-get-site-info did not return success');
 
+const uninstallSelf = await callTool(12, 'wp-forge-uninstall-plugin', { plugin_file: 'wp-plugin-mcp/wp-plugin-mcp.php' });
+assert(uninstallSelf.status === 200, `wp-forge-uninstall-plugin returned HTTP ${uninstallSelf.status}`);
+assert(uninstallSelf.body?.result?.structuredContent?.status === 'error', 'wp-forge-uninstall-plugin should refuse to uninstall itself');
+assert(uninstallSelf.body?.result?.structuredContent?.statusCode === 400, 'wp-forge-uninstall-plugin self-protection should return a 400 statusCode');
+
+const wpCli = await callTool(13, 'wp-forge-run-wp-cli-command', { args: ['plugin', 'list'] });
+assert(wpCli.status === 200, `wp-forge-run-wp-cli-command returned HTTP ${wpCli.status}`);
+assert(wpCli.body?.result?.structuredContent?.status === 'error', 'wp-forge-run-wp-cli-command should be disabled by default');
+assert(wpCli.body?.result?.structuredContent?.statusCode === 403, 'wp-forge-run-wp-cli-command disabled response should return a 403 statusCode');
+
 const posts = await post({
   jsonrpc: '2.0',
-  id: 11,
+  id: 14,
   method: 'tools/call',
   params: {
     name: 'wp-forge-posts-search',

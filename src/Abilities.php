@@ -20,6 +20,7 @@ use WP_Forge\Tools\SiteManagementTools;
 use WP_Forge\Tools\SiteHealthTools;
 use WP_Forge\Tools\TaxonomyTools;
 use WP_Forge\Tools\ThemeManagementTools;
+use WP_Forge\Tools\WPCLITools;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -42,6 +43,7 @@ class Abilities {
 	use SiteHealthTools;
 	use TaxonomyTools;
 	use ThemeManagementTools;
+	use WPCLITools;
 
 	const INTERNAL_PREFIX = 'wp-forge/';
 	const TOOL_PREFIX     = 'wp-forge-';
@@ -240,6 +242,7 @@ class Abilities {
 		$this->add_comment_abilities();
 		$this->add_site_health_abilities();
 		$this->add_error_log_abilities();
+		$this->add_wp_cli_abilities();
 		$this->add_style_abilities();
 		$this->add_rest_catalog_abilities();
 	}

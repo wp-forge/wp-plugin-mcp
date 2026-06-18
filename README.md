@@ -153,6 +153,14 @@ All MCP tools are exposed directly as top-level `wp-forge-*` tools.
 | `wp-forge-get-error-log-path` | Get the WordPress debug log path used by this site |
 | `wp-forge-read-error-log` | Read the tail of the WordPress debug log |
 
+#### WP-CLI
+
+| Tool | Description |
+| --- | --- |
+| `wp-forge-run-wp-cli-command` | Run a WP-CLI command when WP-CLI execution is explicitly enabled and available |
+
+WP-CLI execution is disabled by default. To enable it, define `WP_FORGE_MCP_ENABLE_WP_CLI` as `true` in `wp-config.php`, or return `true` from the `wp_forge_mcp_enable_wp_cli` filter. If `wp` is not on the web server user's `PATH`, define `WP_FORGE_MCP_WP_CLI_PATH` with the full path to the WP-CLI executable.
+
 ### Global Styles
 
 | Tool | Description |

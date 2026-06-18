@@ -38,7 +38,7 @@ $abilities = new Abilities();
 $all       = $abilities->list_abilities();
 $names     = array_column( $all, 'name' );
 
-assert_same( 76, count( $all ), 'Expected the WordPress ability catalog.' );
+assert_same( 77, count( $all ), 'Expected the WordPress ability catalog.' );
 assert_true( in_array( 'wp-forge-posts-search', $names, true ), 'Expected posts search ability.' );
 assert_true( in_array( 'wp-forge-get-site-info', $names, true ), 'Expected site info ability.' );
 assert_true( in_array( 'wp-forge-run-api-function', $names, true ), 'Expected REST runner ability.' );
@@ -113,6 +113,7 @@ $expected_named_tools = array(
 	'wp-forge-list-site-health-tests',
 	'wp-forge-get-error-log-path',
 	'wp-forge-read-error-log',
+	'wp-forge-run-wp-cli-command',
 	'wp-forge-get-global-styles',
 	'wp-forge-update-global-styles',
 	'wp-forge-get-active-global-styles',
@@ -138,7 +139,7 @@ assert_same( false, $schema['annotations']['readOnlyHint'], 'Add post should be 
 
 $direct_tools = $abilities->list_tools();
 $direct_tool_names = array_column( $direct_tools, 'name' );
-assert_same( 76, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
+assert_same( 77, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
 assert_true( in_array( 'wp-forge-posts-search', $direct_tool_names, true ), 'Direct tool list should include posts search.' );
 assert_true( in_array( 'wp-forge-get-active-theme', $direct_tool_names, true ), 'Direct tool list should include active theme.' );
 assert_true( ! in_array( 'wp-forge-list-abilities', $direct_tool_names, true ), 'Gateway list tool should not be exposed.' );
@@ -158,6 +159,10 @@ assert_same( 500, $missing_plugin_runtime['statusCode'], 'Missing WordPress plug
 $missing_theme_runtime = $abilities->call( 'wp-forge-list-themes', array() );
 assert_same( 'error', $missing_theme_runtime['status'], 'Theme tools should report missing runtime in unit tests.' );
 assert_same( 500, $missing_theme_runtime['statusCode'], 'Missing WordPress runtime should be a server-side ability error.' );
+
+$disabled_wp_cli = $abilities->call( 'wp-forge-run-wp-cli-command', array( 'args' => array( 'plugin', 'list' ) ) );
+assert_same( 'error', $disabled_wp_cli['status'], 'WP-CLI tool should be disabled by default.' );
+assert_same( 403, $disabled_wp_cli['statusCode'], 'Disabled WP-CLI tool should return a permission-style error.' );
 
 $missing_runtime = $abilities->call( 'wp-forge-posts-search', array() );
 assert_same( 'error', $missing_runtime['status'], 'WordPress-dependent ability should report missing runtime in unit tests.' );
@@ -198,7 +203,7 @@ $tools = $server->handle(
 	$initialized['_session_id']
 );
 $tool_names = array_column( $tools['result']['tools'], 'name' );
-assert_same( 76, count( $tool_names ), 'tools/list should expose every WordPress tool directly.' );
+assert_same( 77, count( $tool_names ), 'tools/list should expose every WordPress tool directly.' );
 assert_true( in_array( 'wp-forge-posts-search', $tool_names, true ), 'tools/list should expose posts search directly.' );
 assert_true( in_array( 'wp-forge-get-site-info', $tool_names, true ), 'tools/list should expose site info directly.' );
 assert_true( ! in_array( 'wp-forge-call-ability', $tool_names, true ), 'tools/list should not expose a gateway call tool.' );

@@ -38,6 +38,18 @@ trait SiteHealthTools {
 	 * @return mixed
 	 */
 	private function get_site_health_info() {
+		if ( defined( 'ABSPATH' ) && file_exists( ABSPATH . 'wp-admin/includes/file.php' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		if ( defined( 'ABSPATH' ) && file_exists( ABSPATH . 'wp-admin/includes/misc.php' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/misc.php';
+		}
+
+		if ( defined( 'ABSPATH' ) && file_exists( ABSPATH . 'wp-admin/includes/update.php' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/update.php';
+		}
+
 		if ( ! class_exists( 'WP_Debug_Data' ) && defined( 'ABSPATH' ) && file_exists( ABSPATH . 'wp-admin/includes/class-wp-debug-data.php' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/class-wp-debug-data.php';
 		}

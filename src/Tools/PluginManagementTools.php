@@ -212,6 +212,10 @@ trait PluginManagementTools {
 			return Response::error( 'Plugin not found: ' . $plugin_file, 404 );
 		}
 
+		if ( defined( 'WP_FORGE_MCP_FILE' ) && plugin_basename( WP_FORGE_MCP_FILE ) === $plugin_file ) {
+			return Response::error( 'WordPress MCP cannot uninstall itself from an MCP request.', 400 );
+		}
+
 		deactivate_plugins( $plugin_file );
 		$result = delete_plugins( array( $plugin_file ) );
 
