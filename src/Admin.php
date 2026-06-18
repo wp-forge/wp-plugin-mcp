@@ -96,7 +96,7 @@ class Admin {
 			<ol>
 				<li>
 					<?php esc_html_e( 'Create an', 'wp-plugin-mcp' ); ?>
-					<a href="<?php echo esc_url( $application_passwords_url ); ?>"><?php esc_html_e( 'Application Password', 'wp-plugin-mcp' ); ?></a>
+					<a href="<?php echo esc_url( $application_passwords_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Application Password', 'wp-plugin-mcp' ); ?></a>
 					<?php esc_html_e( 'for your MCP client.', 'wp-plugin-mcp' ); ?>
 				</li>
 				<li><?php esc_html_e( 'Replace YOUR_WORDPRESS_USERNAME and YOUR_APPLICATION_PASSWORD in the configuration.', 'wp-plugin-mcp' ); ?></li>
