@@ -134,7 +134,9 @@ class Admin {
 					<input type="checkbox" name="wp_forge_mcp_activity_log_enabled" value="1" <?php checked( $activity_log_enabled ); ?> />
 					<?php esc_html_e( 'Enable MCP activity log', 'wp-plugin-mcp' ); ?>
 				</label>
-				<?php submit_button( __( 'Save Activity Log Settings', 'wp-plugin-mcp' ), 'secondary', 'submit', false ); ?>
+				<p>
+					<?php submit_button( __( 'Save Activity Log Settings', 'wp-plugin-mcp' ), 'secondary', 'submit', false ); ?>
+				</p>
 			</form>
 
 			<p><?php esc_html_e( 'The activity log records tool name, user, status, duration, IP address, user agent, and session ID. Tool arguments and responses are not logged.', 'wp-plugin-mcp' ); ?></p>
