@@ -40,6 +40,16 @@ All MCP tools are exposed directly as top-level `wp-forge-*` tools.
 | `wp-forge-update-tag` | Update a WordPress post tag |
 | `wp-forge-delete-tag` | Delete a WordPress post tag |
 
+#### Custom Taxonomies
+
+| Tool | Description |
+| --- | --- |
+| `wp-forge-list-taxonomies` | List registered WordPress taxonomies |
+| `wp-forge-list-taxonomy-terms` | List terms for a registered taxonomy |
+| `wp-forge-add-taxonomy-term` | Add a term to a registered taxonomy |
+| `wp-forge-update-taxonomy-term` | Update a term in a registered taxonomy |
+| `wp-forge-delete-taxonomy-term` | Delete a term from a registered taxonomy |
+
 #### Pages
 
 | Tool | Description |
@@ -98,6 +108,51 @@ All MCP tools are exposed directly as top-level `wp-forge-*` tools.
 | --- | --- |
 | `wp-forge-get-site-info` | Get detailed site information |
 
+#### Plugins
+
+| Tool | Description |
+| --- | --- |
+| `wp-forge-list-plugins` | List installed WordPress plugins and their activation state |
+| `wp-forge-install-plugin` | Install a WordPress plugin from the WordPress.org plugin directory by slug |
+| `wp-forge-activate-plugin` | Activate an installed WordPress plugin by plugin file path |
+| `wp-forge-deactivate-plugin` | Deactivate an active WordPress plugin by plugin file path |
+| `wp-forge-uninstall-plugin` | Deactivate and delete an installed WordPress plugin by plugin file path |
+
+#### Options
+
+| Tool | Description |
+| --- | --- |
+| `wp-forge-list-options` | List WordPress options by search or prefix |
+| `wp-forge-get-option` | Get a WordPress option value by name |
+| `wp-forge-update-option` | Update a WordPress option value by name |
+| `wp-forge-delete-option` | Delete a WordPress option by name |
+
+#### Comments
+
+| Tool | Description |
+| --- | --- |
+| `wp-forge-list-comments` | List WordPress comments with filtering and pagination |
+| `wp-forge-get-comment` | Get a WordPress comment by ID |
+| `wp-forge-add-comment` | Add a comment to a WordPress post |
+| `wp-forge-update-comment` | Update a WordPress comment by ID |
+| `wp-forge-delete-comment` | Delete a WordPress comment by ID |
+| `wp-forge-approve-comment` | Approve a WordPress comment by ID |
+| `wp-forge-spam-comment` | Mark a WordPress comment as spam by ID |
+
+#### Site Health
+
+| Tool | Description |
+| --- | --- |
+| `wp-forge-get-site-health-info` | Get WordPress Site Health debug information |
+| `wp-forge-list-site-health-tests` | List available WordPress Site Health tests |
+
+#### Error Logs
+
+| Tool | Description |
+| --- | --- |
+| `wp-forge-get-error-log-path` | Get the WordPress debug log path used by this site |
+| `wp-forge-read-error-log` | Read the tail of the WordPress debug log |
+
 ### Global Styles
 
 | Tool | Description |
@@ -112,6 +167,10 @@ All MCP tools are exposed directly as top-level `wp-forge-*` tools.
 | Tool | Description |
 | --- | --- |
 | `wp-forge-get-active-theme` | Get the active theme information |
+| `wp-forge-list-themes` | List installed WordPress themes and their activation state |
+| `wp-forge-install-theme` | Install a WordPress theme from the WordPress.org theme directory by slug |
+| `wp-forge-activate-theme` | Activate an installed WordPress theme by stylesheet directory name |
+| `wp-forge-delete-theme` | Delete an installed WordPress theme by stylesheet directory name |
 
 ### Advanced REST API CRUD
 

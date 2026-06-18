@@ -8,11 +8,18 @@
 namespace WP_Forge;
 
 use WP_Forge\Tools\ContentManagementTools;
+use WP_Forge\Tools\CommentManagementTools;
+use WP_Forge\Tools\CustomTaxonomyTools;
+use WP_Forge\Tools\ErrorLogTools;
 use WP_Forge\Tools\GlobalStylesTools;
 use WP_Forge\Tools\MediaTools;
+use WP_Forge\Tools\OptionManagementTools;
+use WP_Forge\Tools\PluginManagementTools;
 use WP_Forge\Tools\RestCatalogTools;
 use WP_Forge\Tools\SiteManagementTools;
+use WP_Forge\Tools\SiteHealthTools;
 use WP_Forge\Tools\TaxonomyTools;
+use WP_Forge\Tools\ThemeManagementTools;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -23,11 +30,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Abilities {
 	use ContentManagementTools;
+	use CommentManagementTools;
+	use CustomTaxonomyTools;
+	use ErrorLogTools;
 	use GlobalStylesTools;
 	use MediaTools;
+	use OptionManagementTools;
+	use PluginManagementTools;
 	use RestCatalogTools;
 	use SiteManagementTools;
+	use SiteHealthTools;
 	use TaxonomyTools;
+	use ThemeManagementTools;
 
 	const INTERNAL_PREFIX = 'wp-forge/';
 	const TOOL_PREFIX     = 'wp-forge-';
@@ -217,8 +231,15 @@ class Abilities {
 	private function register_default_abilities() {
 		$this->add_content_abilities();
 		$this->add_taxonomy_abilities();
+		$this->add_custom_taxonomy_abilities();
 		$this->add_media_abilities();
 		$this->add_site_abilities();
+		$this->add_plugin_abilities();
+		$this->add_theme_abilities();
+		$this->add_option_abilities();
+		$this->add_comment_abilities();
+		$this->add_site_health_abilities();
+		$this->add_error_log_abilities();
 		$this->add_style_abilities();
 		$this->add_rest_catalog_abilities();
 	}

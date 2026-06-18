@@ -38,7 +38,7 @@ $abilities = new Abilities();
 $all       = $abilities->list_abilities();
 $names     = array_column( $all, 'name' );
 
-assert_same( 47, count( $all ), 'Expected the non-WooCommerce ability catalog.' );
+assert_same( 76, count( $all ), 'Expected the WordPress ability catalog.' );
 assert_true( in_array( 'wp-forge-posts-search', $names, true ), 'Expected posts search ability.' );
 assert_true( in_array( 'wp-forge-get-site-info', $names, true ), 'Expected site info ability.' );
 assert_true( in_array( 'wp-forge-run-api-function', $names, true ), 'Expected REST runner ability.' );
@@ -58,6 +58,11 @@ $expected_named_tools = array(
 	'wp-forge-add-tag',
 	'wp-forge-update-tag',
 	'wp-forge-delete-tag',
+	'wp-forge-list-taxonomies',
+	'wp-forge-list-taxonomy-terms',
+	'wp-forge-add-taxonomy-term',
+	'wp-forge-update-taxonomy-term',
+	'wp-forge-delete-taxonomy-term',
 	'wp-forge-pages-search',
 	'wp-forge-get-page',
 	'wp-forge-add-page',
@@ -84,6 +89,30 @@ $expected_named_tools = array(
 	'wp-forge-get-general-settings',
 	'wp-forge-update-general-settings',
 	'wp-forge-get-site-info',
+	'wp-forge-list-plugins',
+	'wp-forge-install-plugin',
+	'wp-forge-activate-plugin',
+	'wp-forge-deactivate-plugin',
+	'wp-forge-uninstall-plugin',
+	'wp-forge-list-themes',
+	'wp-forge-install-theme',
+	'wp-forge-activate-theme',
+	'wp-forge-delete-theme',
+	'wp-forge-list-options',
+	'wp-forge-get-option',
+	'wp-forge-update-option',
+	'wp-forge-delete-option',
+	'wp-forge-list-comments',
+	'wp-forge-get-comment',
+	'wp-forge-add-comment',
+	'wp-forge-update-comment',
+	'wp-forge-delete-comment',
+	'wp-forge-approve-comment',
+	'wp-forge-spam-comment',
+	'wp-forge-get-site-health-info',
+	'wp-forge-list-site-health-tests',
+	'wp-forge-get-error-log-path',
+	'wp-forge-read-error-log',
 	'wp-forge-get-global-styles',
 	'wp-forge-update-global-styles',
 	'wp-forge-get-active-global-styles',
@@ -109,7 +138,7 @@ assert_same( false, $schema['annotations']['readOnlyHint'], 'Add post should be 
 
 $direct_tools = $abilities->list_tools();
 $direct_tool_names = array_column( $direct_tools, 'name' );
-assert_same( 47, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
+assert_same( 76, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
 assert_true( in_array( 'wp-forge-posts-search', $direct_tool_names, true ), 'Direct tool list should include posts search.' );
 assert_true( in_array( 'wp-forge-get-active-theme', $direct_tool_names, true ), 'Direct tool list should include active theme.' );
 assert_true( ! in_array( 'wp-forge-list-abilities', $direct_tool_names, true ), 'Gateway list tool should not be exposed.' );
@@ -121,6 +150,14 @@ $site_info_tool = array_values( array_filter( $direct_tools, static function ( $
 } ) )[0];
 assert_true( $site_info_tool['inputSchema']['properties'] instanceof stdClass, 'No-argument tool properties should serialize as a JSON object.' );
 assert_same( true, $site_info_tool['annotations']['readOnlyHint'], 'Read-only tools should use the MCP readOnlyHint annotation.' );
+
+$missing_plugin_runtime = $abilities->call( 'wp-forge-list-plugins', array() );
+assert_same( 'error', $missing_plugin_runtime['status'], 'Plugin tools should report missing runtime in unit tests.' );
+assert_same( 500, $missing_plugin_runtime['statusCode'], 'Missing WordPress plugin runtime should be a server-side ability error.' );
+
+$missing_theme_runtime = $abilities->call( 'wp-forge-list-themes', array() );
+assert_same( 'error', $missing_theme_runtime['status'], 'Theme tools should report missing runtime in unit tests.' );
+assert_same( 500, $missing_theme_runtime['statusCode'], 'Missing WordPress runtime should be a server-side ability error.' );
 
 $missing_runtime = $abilities->call( 'wp-forge-posts-search', array() );
 assert_same( 'error', $missing_runtime['status'], 'WordPress-dependent ability should report missing runtime in unit tests.' );
@@ -161,7 +198,7 @@ $tools = $server->handle(
 	$initialized['_session_id']
 );
 $tool_names = array_column( $tools['result']['tools'], 'name' );
-assert_same( 47, count( $tool_names ), 'tools/list should expose every WordPress tool directly.' );
+assert_same( 76, count( $tool_names ), 'tools/list should expose every WordPress tool directly.' );
 assert_true( in_array( 'wp-forge-posts-search', $tool_names, true ), 'tools/list should expose posts search directly.' );
 assert_true( in_array( 'wp-forge-get-site-info', $tool_names, true ), 'tools/list should expose site info directly.' );
 assert_true( ! in_array( 'wp-forge-call-ability', $tool_names, true ), 'tools/list should not expose a gateway call tool.' );
