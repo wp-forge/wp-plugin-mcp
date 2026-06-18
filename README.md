@@ -22,32 +22,14 @@ All MCP tools are exposed directly as top-level `wp-forge-*` tools.
 | `wp-forge-update-post` | Update a WordPress post by ID |
 | `wp-forge-delete-post` | Delete a WordPress post by ID |
 
-#### Post Categories
-
-| Tool | Description |
-| --- | --- |
-| `wp-forge-list-categories` | List all WordPress post categories |
-| `wp-forge-add-category` | Add a new WordPress post category |
-| `wp-forge-update-category` | Update a WordPress post category |
-| `wp-forge-delete-category` | Delete a WordPress post category |
-
-#### Post Tags
-
-| Tool | Description |
-| --- | --- |
-| `wp-forge-list-tags` | List all WordPress post tags |
-| `wp-forge-add-tag` | Add a new WordPress post tag |
-| `wp-forge-update-tag` | Update a WordPress post tag |
-| `wp-forge-delete-tag` | Delete a WordPress post tag |
-
-#### Custom Taxonomies
+#### Taxonomies
 
 | Tool | Description |
 | --- | --- |
 | `wp-forge-list-taxonomies` | List registered WordPress taxonomies |
 | `wp-forge-list-taxonomy-terms` | List terms for a registered taxonomy |
-| `wp-forge-add-taxonomy-term` | Add a term to a registered taxonomy |
-| `wp-forge-update-taxonomy-term` | Update a term in a registered taxonomy |
+| `wp-forge-get-taxonomy-term` | Get a term from a registered taxonomy by ID |
+| `wp-forge-save-taxonomy-term` | Create or update a term in a registered taxonomy |
 | `wp-forge-delete-taxonomy-term` | Delete a term from a registered taxonomy |
 
 #### Pages

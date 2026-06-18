@@ -9,7 +9,6 @@ namespace WP_Forge;
 
 use WP_Forge\Tools\ContentManagementTools;
 use WP_Forge\Tools\CommentManagementTools;
-use WP_Forge\Tools\CustomTaxonomyTools;
 use WP_Forge\Tools\ErrorLogTools;
 use WP_Forge\Tools\GlobalStylesTools;
 use WP_Forge\Tools\MediaTools;
@@ -32,7 +31,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Abilities {
 	use ContentManagementTools;
 	use CommentManagementTools;
-	use CustomTaxonomyTools;
 	use ErrorLogTools;
 	use GlobalStylesTools;
 	use MediaTools;
@@ -233,7 +231,6 @@ class Abilities {
 	private function register_default_abilities() {
 		$this->add_content_abilities();
 		$this->add_taxonomy_abilities();
-		$this->add_custom_taxonomy_abilities();
 		$this->add_media_abilities();
 		$this->add_site_abilities();
 		$this->add_plugin_abilities();
@@ -510,6 +507,26 @@ class Abilities {
 	}
 
 	/**
+	 * Get taxonomy term.
+	 *
+	 * @param string $taxonomy Taxonomy.
+	 * @param int    $id Term ID.
+	 * @return array<string,mixed>
+	 */
+	private function get_term_item( $taxonomy, $id ) {
+		if ( ! function_exists( 'get_term' ) ) {
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
+		}
+
+		$term = get_term( $id, $taxonomy );
+		if ( ! $term || is_wp_error( $term ) ) {
+			return Response::error( 'Term not found.', 404 );
+		}
+
+		return $this->format_term( $term );
+	}
+
+	/**
 	 * Insert taxonomy term.
 	 *
 	 * @param string              $taxonomy Taxonomy.
@@ -521,7 +538,10 @@ class Abilities {
 			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
-		return Response::unwrap_wp_error( wp_insert_term( $params['name'], $taxonomy, $this->term_args( $params ) ) );
+		$args = $this->term_args( $params );
+		unset( $args['name'] );
+
+		return Response::unwrap_wp_error( wp_insert_term( $params['name'], $taxonomy, $args ) );
 	}
 
 	/**
@@ -563,7 +583,7 @@ class Abilities {
 	 */
 	private function term_args( $params ) {
 		$args = array();
-		foreach ( array( 'slug', 'description' ) as $key ) {
+		foreach ( array( 'name', 'slug', 'description' ) as $key ) {
 			if ( isset( $params[ $key ] ) ) {
 				$args[ $key ] = $params[ $key ];
 			}

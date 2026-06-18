@@ -50,10 +50,12 @@ class Admin {
 	public function render_page() {
 		$endpoint = rest_url( 'mcp/wp-forge' );
 		$application_passwords_url = admin_url( 'profile.php#application-passwords-section' );
+		$current_user = wp_get_current_user();
+		$current_username = $current_user && $current_user->exists() ? $current_user->user_login : 'YOUR_WORDPRESS_USERNAME';
 		$allow_insecure_tls = isset( $_GET['wp_forge_mcp_local_tls'] ) && '1' === $_GET['wp_forge_mcp_local_tls']; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$config_env = array(
 			'WP_API_URL'      => $endpoint,
-			'WP_API_USERNAME' => 'YOUR_WORDPRESS_USERNAME',
+			'WP_API_USERNAME' => $current_username,
 			'WP_API_PASSWORD' => 'YOUR_APPLICATION_PASSWORD',
 			'OAUTH_ENABLED'   => 'false',
 		);
@@ -99,7 +101,7 @@ class Admin {
 					<a href="<?php echo esc_url( $application_passwords_url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Application Password', 'wp-plugin-mcp' ); ?></a>
 					<?php esc_html_e( 'for your MCP client.', 'wp-plugin-mcp' ); ?>
 				</li>
-				<li><?php esc_html_e( 'Replace YOUR_WORDPRESS_USERNAME and YOUR_APPLICATION_PASSWORD in the configuration.', 'wp-plugin-mcp' ); ?></li>
+				<li><?php esc_html_e( 'Replace YOUR_APPLICATION_PASSWORD in the configuration.', 'wp-plugin-mcp' ); ?></li>
 			</ol>
 
 			<p><?php esc_html_e( 'All MCP tools exposed by this plugin use the wp-forge prefix, such as wp-forge-posts-search and wp-forge-get-site-info.', 'wp-plugin-mcp' ); ?></p>

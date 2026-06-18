@@ -7,12 +7,14 @@
 
 namespace WP_Forge\Tools;
 
+use WP_Forge\Response;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
- * Registers post category and tag tools.
+ * Registers taxonomy tools.
  */
 trait TaxonomyTools {
 	/**
@@ -21,47 +23,159 @@ trait TaxonomyTools {
 	 * @return void
 	 */
 	private function add_taxonomy_abilities() {
-		$write_schema = $this->schema(
+		$taxonomy_schema = $this->schema(
 			array(
+				'taxonomy' => $this->string_prop( 'Taxonomy name.' ),
+			),
+			array( 'taxonomy' )
+		);
+		$term_get_schema = $this->schema(
+			array(
+				'taxonomy' => $this->string_prop( 'Taxonomy name.' ),
+				'id'       => $this->int_prop( 'Term ID.' ),
+			),
+			array( 'taxonomy', 'id' )
+		);
+		$term_save_schema = $this->schema(
+			array(
+				'taxonomy'    => $this->string_prop( 'Taxonomy name.' ),
+				'id'          => $this->int_prop( 'Term ID. Omit to create a new term.' ),
 				'name'        => $this->string_prop( 'Term name.' ),
 				'slug'        => $this->string_prop( 'Term slug.' ),
 				'description' => $this->string_prop( 'Description.' ),
 			),
-			array( 'name' )
+			array( 'taxonomy' )
 		);
-		$update_schema = $write_schema;
-		$update_schema['properties']['id'] = $this->int_prop( 'Term ID.' );
-		$update_schema['required'] = array( 'id' );
-		$delete_schema = $this->schema( array( 'id' => $this->int_prop( 'Term ID.' ) ), array( 'id' ) );
 
-		$this->add_taxonomy_group( 'category', 'categories', 'category', 'Category', $write_schema, $update_schema, $delete_schema );
-		$this->add_taxonomy_group( 'post_tag', 'tags', 'tag', 'Tag', $write_schema, $update_schema, $delete_schema );
+		$this->add_ability( self::INTERNAL_PREFIX . 'list-taxonomies', 'List Taxonomies', 'List registered WordPress taxonomies', $this->schema(
+			array(
+				'post_type' => $this->string_prop( 'Filter taxonomies by object type.' ),
+			)
+		), function ( $params ) {
+			return $this->list_taxonomies_tool( $params );
+		} );
+
+		$this->add_ability( self::INTERNAL_PREFIX . 'list-taxonomy-terms', 'List Taxonomy Terms', 'List terms for a registered taxonomy', $taxonomy_schema, function ( $params ) {
+			return $this->list_taxonomy_terms_tool( $params['taxonomy'] );
+		} );
+
+		$this->add_ability( self::INTERNAL_PREFIX . 'get-taxonomy-term', 'Get Taxonomy Term', 'Get a term from a registered taxonomy by ID', $term_get_schema, function ( $params ) {
+			return $this->get_taxonomy_term_tool( $params['taxonomy'], (int) $params['id'] );
+		} );
+
+		$this->add_ability( self::INTERNAL_PREFIX . 'save-taxonomy-term', 'Save Taxonomy Term', 'Create or update a term in a registered taxonomy', $term_save_schema, function ( $params ) {
+			return $this->save_taxonomy_term_tool( $params );
+		}, false, 'manage_categories' );
+
+		$this->add_ability( self::INTERNAL_PREFIX . 'delete-taxonomy-term', 'Delete Taxonomy Term', 'Delete a term from a registered taxonomy', $term_get_schema, function ( $params ) {
+			return $this->delete_term( $params['taxonomy'], (int) $params['id'] );
+		}, false, 'manage_categories' );
 	}
 
 	/**
-	 * Register abilities for one taxonomy.
+	 * List taxonomies.
 	 *
-	 * @param string              $taxonomy Taxonomy name.
-	 * @param string              $slug Tool slug.
-	 * @param string              $singular Singular tool slug.
-	 * @param string              $label Label.
-	 * @param array<string,mixed> $write_schema Write schema.
-	 * @param array<string,mixed> $update_schema Update schema.
-	 * @param array<string,mixed> $delete_schema Delete schema.
-	 * @return void
+	 * @param array<string,mixed> $params Params.
+	 * @return array<string,mixed>|array<int,array<string,mixed>>
 	 */
-	private function add_taxonomy_group( $taxonomy, $slug, $singular, $label, $write_schema, $update_schema, $delete_schema ) {
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-' . $slug, 'List ' . $label . 's', 'List all WordPress post ' . strtolower( $label ) . 's', $this->schema(), function () use ( $taxonomy ) {
-			return $this->list_terms( $taxonomy );
-		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'add-' . $singular, 'Add ' . $label, 'Add a new WordPress post ' . strtolower( $label ), $write_schema, function ( $params ) use ( $taxonomy ) {
-			return $this->insert_term( $taxonomy, $params );
-		}, false );
-		$this->add_ability( self::INTERNAL_PREFIX . 'update-' . $singular, 'Update ' . $label, 'Update a WordPress post ' . strtolower( $label ), $update_schema, function ( $params ) use ( $taxonomy ) {
+	private function list_taxonomies_tool( $params ) {
+		if ( ! function_exists( 'get_taxonomies' ) ) {
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
+		}
+
+		$taxonomies = get_taxonomies( array(), 'objects' );
+		$out        = array();
+
+		foreach ( $taxonomies as $taxonomy ) {
+			if ( ! empty( $params['post_type'] ) && ! in_array( $params['post_type'], $taxonomy->object_type, true ) ) {
+				continue;
+			}
+
+			$out[] = array(
+				'name'         => $taxonomy->name,
+				'label'        => $taxonomy->label,
+				'description'  => $taxonomy->description,
+				'public'       => (bool) $taxonomy->public,
+				'hierarchical' => (bool) $taxonomy->hierarchical,
+				'object_type'  => array_values( $taxonomy->object_type ),
+				'rest_base'    => $taxonomy->rest_base,
+			);
+		}
+
+		return $out;
+	}
+
+	/**
+	 * List taxonomy terms.
+	 *
+	 * @param string $taxonomy Taxonomy.
+	 * @return mixed
+	 */
+	private function list_taxonomy_terms_tool( $taxonomy ) {
+		$taxonomy_check = $this->validate_taxonomy( $taxonomy );
+		if ( isset( $taxonomy_check['status'] ) && 'error' === $taxonomy_check['status'] ) {
+			return $taxonomy_check;
+		}
+
+		return $this->list_terms( $taxonomy_check['taxonomy'] );
+	}
+
+	/**
+	 * Get a taxonomy term.
+	 *
+	 * @param string $taxonomy Taxonomy.
+	 * @param int    $id Term ID.
+	 * @return mixed
+	 */
+	private function get_taxonomy_term_tool( $taxonomy, $id ) {
+		$taxonomy_check = $this->validate_taxonomy( $taxonomy );
+		if ( isset( $taxonomy_check['status'] ) && 'error' === $taxonomy_check['status'] ) {
+			return $taxonomy_check;
+		}
+
+		return $this->get_term_item( $taxonomy_check['taxonomy'], $id );
+	}
+
+	/**
+	 * Save a taxonomy term.
+	 *
+	 * @param array<string,mixed> $params Params.
+	 * @return mixed
+	 */
+	private function save_taxonomy_term_tool( $params ) {
+		$taxonomy_check = $this->validate_taxonomy( $params['taxonomy'] );
+		if ( isset( $taxonomy_check['status'] ) && 'error' === $taxonomy_check['status'] ) {
+			return $taxonomy_check;
+		}
+
+		$taxonomy = $taxonomy_check['taxonomy'];
+		if ( ! empty( $params['id'] ) ) {
 			return $this->update_term( $taxonomy, (int) $params['id'], $params );
-		}, false );
-		$this->add_ability( self::INTERNAL_PREFIX . 'delete-' . $singular, 'Delete ' . $label, 'Delete a WordPress post ' . strtolower( $label ), $delete_schema, function ( $params ) use ( $taxonomy ) {
-			return $this->delete_term( $taxonomy, (int) $params['id'] );
-		}, false );
+		}
+
+		if ( empty( $params['name'] ) ) {
+			return Response::error( 'Term name is required when creating a term.', 400 );
+		}
+
+		return $this->insert_term( $taxonomy, $params );
+	}
+
+	/**
+	 * Validate taxonomy.
+	 *
+	 * @param string $taxonomy Taxonomy.
+	 * @return array<string,mixed>
+	 */
+	private function validate_taxonomy( $taxonomy ) {
+		if ( ! function_exists( 'taxonomy_exists' ) ) {
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
+		}
+
+		$taxonomy = sanitize_key( $taxonomy );
+		if ( ! taxonomy_exists( $taxonomy ) ) {
+			return Response::error( 'Taxonomy not found: ' . $taxonomy, 404 );
+		}
+
+		return array( 'taxonomy' => $taxonomy );
 	}
 }

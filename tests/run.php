@@ -38,7 +38,7 @@ $abilities = new Abilities();
 $all       = $abilities->list_abilities();
 $names     = array_column( $all, 'name' );
 
-assert_same( 77, count( $all ), 'Expected the WordPress ability catalog.' );
+assert_same( 69, count( $all ), 'Expected the WordPress ability catalog.' );
 assert_true( in_array( 'wp-forge-posts-search', $names, true ), 'Expected posts search ability.' );
 assert_true( in_array( 'wp-forge-get-site-info', $names, true ), 'Expected site info ability.' );
 assert_true( in_array( 'wp-forge-run-api-function', $names, true ), 'Expected REST runner ability.' );
@@ -50,18 +50,10 @@ $expected_named_tools = array(
 	'wp-forge-add-post',
 	'wp-forge-update-post',
 	'wp-forge-delete-post',
-	'wp-forge-list-categories',
-	'wp-forge-add-category',
-	'wp-forge-update-category',
-	'wp-forge-delete-category',
-	'wp-forge-list-tags',
-	'wp-forge-add-tag',
-	'wp-forge-update-tag',
-	'wp-forge-delete-tag',
 	'wp-forge-list-taxonomies',
 	'wp-forge-list-taxonomy-terms',
-	'wp-forge-add-taxonomy-term',
-	'wp-forge-update-taxonomy-term',
+	'wp-forge-get-taxonomy-term',
+	'wp-forge-save-taxonomy-term',
 	'wp-forge-delete-taxonomy-term',
 	'wp-forge-pages-search',
 	'wp-forge-get-page',
@@ -139,7 +131,7 @@ assert_same( false, $schema['annotations']['readOnlyHint'], 'Add post should be 
 
 $direct_tools = $abilities->list_tools();
 $direct_tool_names = array_column( $direct_tools, 'name' );
-assert_same( 77, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
+assert_same( 69, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
 assert_true( in_array( 'wp-forge-posts-search', $direct_tool_names, true ), 'Direct tool list should include posts search.' );
 assert_true( in_array( 'wp-forge-get-active-theme', $direct_tool_names, true ), 'Direct tool list should include active theme.' );
 assert_true( ! in_array( 'wp-forge-list-abilities', $direct_tool_names, true ), 'Gateway list tool should not be exposed.' );
@@ -203,7 +195,7 @@ $tools = $server->handle(
 	$initialized['_session_id']
 );
 $tool_names = array_column( $tools['result']['tools'], 'name' );
-assert_same( 77, count( $tool_names ), 'tools/list should expose every WordPress tool directly.' );
+assert_same( 69, count( $tool_names ), 'tools/list should expose every WordPress tool directly.' );
 assert_true( in_array( 'wp-forge-posts-search', $tool_names, true ), 'tools/list should expose posts search directly.' );
 assert_true( in_array( 'wp-forge-get-site-info', $tool_names, true ), 'tools/list should expose site info directly.' );
 assert_true( ! in_array( 'wp-forge-call-ability', $tool_names, true ), 'tools/list should not expose a gateway call tool.' );
