@@ -36,4 +36,6 @@ if ( file_exists( $autoload ) ) {
 	return;
 }
 
+register_activation_hook( WP_FORGE_MCP_FILE, array( 'WP_Forge\Plugin', 'activate' ) );
+
 WP_Forge\Plugin::instance()->init();

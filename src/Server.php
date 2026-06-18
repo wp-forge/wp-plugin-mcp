@@ -27,12 +27,21 @@ class Server {
 	private $abilities;
 
 	/**
+	 * Activity logger.
+	 *
+	 * @var ActivityLogger|null
+	 */
+	private $activity_logger;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Abilities $abilities Ability registry.
+	 * @param Abilities           $abilities Ability registry.
+	 * @param ActivityLogger|null $activity_logger Activity logger.
 	 */
-	public function __construct( Abilities $abilities ) {
-		$this->abilities = $abilities;
+	public function __construct( Abilities $abilities, ?ActivityLogger $activity_logger = null ) {
+		$this->abilities       = $abilities;
+		$this->activity_logger = $activity_logger;
 	}
 
 	/**
@@ -182,7 +191,12 @@ class Server {
 			}
 
 			$arguments = isset( $params['arguments'] ) && is_array( $params['arguments'] ) ? $params['arguments'] : array();
-			return $this->json_rpc_success( $id, $this->tool_success( $this->abilities->call( (string) $params['name'], $arguments ) ) );
+			$tool_name = (string) $params['name'];
+			$started   = microtime( true );
+			$payload   = $this->abilities->call( $tool_name, $arguments );
+			$this->log_tool_call( $tool_name, $payload, $started, $session_id );
+
+			return $this->json_rpc_success( $id, $this->tool_success( $payload ) );
 		}
 
 		return $this->json_rpc_error( $id, -32601, 'Method not found: ' . $method, 404 );
@@ -239,6 +253,31 @@ class Server {
 				),
 			),
 			'structuredContent' => $payload,
+		);
+	}
+
+	/**
+	 * Log a tool call when activity logging is enabled.
+	 *
+	 * @param string              $tool_name Tool name.
+	 * @param array<string,mixed> $payload Tool response payload.
+	 * @param float               $started Start timestamp.
+	 * @param string|null         $session_id Session ID.
+	 * @return void
+	 */
+	private function log_tool_call( $tool_name, $payload, $started, $session_id ) {
+		if ( ! $this->activity_logger ) {
+			return;
+		}
+
+		$this->activity_logger->log_tool_call(
+			array(
+				'tool_name'   => $tool_name,
+				'status'      => isset( $payload['status'] ) ? $payload['status'] : '',
+				'status_code' => isset( $payload['statusCode'] ) ? $payload['statusCode'] : 0,
+				'duration_ms' => max( 1, (int) ceil( ( microtime( true ) - $started ) * 1000 ) ),
+				'session_id'  => is_string( $session_id ) ? $session_id : '',
+			)
 		);
 	}
 
