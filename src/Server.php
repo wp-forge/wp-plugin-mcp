@@ -275,7 +275,7 @@ class Server {
 				'tool_name'   => $tool_name,
 				'status'      => isset( $payload['status'] ) ? $payload['status'] : '',
 				'status_code' => isset( $payload['statusCode'] ) ? $payload['statusCode'] : 0,
-				'duration_ms' => (int) round( ( microtime( true ) - $started ) * 1000 ),
+				'duration_ms' => max( 1, (int) ceil( ( microtime( true ) - $started ) * 1000 ) ),
 				'session_id'  => is_string( $session_id ) ? $session_id : '',
 			)
 		);

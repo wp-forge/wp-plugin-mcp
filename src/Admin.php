@@ -72,7 +72,15 @@ class Admin {
 		$current_username = $current_user && $current_user->exists() ? $current_user->user_login : 'YOUR_WORDPRESS_USERNAME';
 		$allow_insecure_tls = isset( $_GET['wp_forge_mcp_local_tls'] ) && '1' === $_GET['wp_forge_mcp_local_tls']; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$activity_log_enabled = $this->activity_logger->is_enabled();
-		$activity_entries = $this->activity_logger->get_recent_entries( 50 );
+		$activity_filters = $this->get_activity_filters();
+		$activity_page = isset( $_GET['mcp_log_page'] ) ? max( 1, (int) $_GET['mcp_log_page'] ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$activity_per_page = isset( $_GET['mcp_log_per_page'] ) ? max( 1, min( 200, (int) $_GET['mcp_log_per_page'] ) ) : 50; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$activity_entries = $this->activity_logger->get_entries( $activity_filters, $activity_page, $activity_per_page );
+		$activity_total = $this->activity_logger->count_entries( $activity_filters );
+		$activity_total_pages = max( 1, (int) ceil( $activity_total / $activity_per_page ) );
+		$activity_tools = $this->activity_logger->get_distinct_values( 'tool_name' );
+		$activity_users = $this->activity_logger->get_distinct_values( 'username' );
+		$activity_statuses = $this->activity_logger->get_distinct_values( 'status' );
 		$config_env = array(
 			'WP_API_URL'      => $endpoint,
 			'WP_API_USERNAME' => $current_username,
@@ -141,7 +149,67 @@ class Admin {
 
 			<p><?php esc_html_e( 'The activity log records tool name, user, status, duration, IP address, user agent, and session ID. Tool arguments and responses are not logged.', 'wp-plugin-mcp' ); ?></p>
 
+			<form method="get" action="<?php echo esc_url( admin_url( 'options-general.php' ) ); ?>" style="margin: 16px 0;">
+				<input type="hidden" name="page" value="wp-plugin-mcp" />
+				<label>
+					<?php esc_html_e( 'From', 'wp-plugin-mcp' ); ?>
+					<input type="date" name="mcp_log_date_from" value="<?php echo esc_attr( $activity_filters['date_from'] ); ?>" />
+				</label>
+				<label>
+					<?php esc_html_e( 'To', 'wp-plugin-mcp' ); ?>
+					<input type="date" name="mcp_log_date_to" value="<?php echo esc_attr( $activity_filters['date_to'] ); ?>" />
+				</label>
+				<label>
+					<?php esc_html_e( 'Tool', 'wp-plugin-mcp' ); ?>
+					<select name="mcp_log_tool">
+						<option value=""><?php esc_html_e( 'All tools', 'wp-plugin-mcp' ); ?></option>
+						<?php foreach ( $activity_tools as $tool ) : ?>
+							<option value="<?php echo esc_attr( $tool ); ?>" <?php selected( $activity_filters['tool_name'], $tool ); ?>><?php echo esc_html( $tool ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</label>
+				<label>
+					<?php esc_html_e( 'User', 'wp-plugin-mcp' ); ?>
+					<select name="mcp_log_user">
+						<option value=""><?php esc_html_e( 'All users', 'wp-plugin-mcp' ); ?></option>
+						<?php foreach ( $activity_users as $user ) : ?>
+							<option value="<?php echo esc_attr( $user ); ?>" <?php selected( $activity_filters['username'], $user ); ?>><?php echo esc_html( $user ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</label>
+				<label>
+					<?php esc_html_e( 'Status', 'wp-plugin-mcp' ); ?>
+					<select name="mcp_log_status">
+						<option value=""><?php esc_html_e( 'All statuses', 'wp-plugin-mcp' ); ?></option>
+						<?php foreach ( $activity_statuses as $status ) : ?>
+							<option value="<?php echo esc_attr( $status ); ?>" <?php selected( $activity_filters['status'], $status ); ?>><?php echo esc_html( $status ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</label>
+				<label>
+					<?php esc_html_e( 'Per page', 'wp-plugin-mcp' ); ?>
+					<select name="mcp_log_per_page">
+						<?php foreach ( array( 10, 25, 50, 100, 200 ) as $per_page_option ) : ?>
+							<option value="<?php echo esc_attr( $per_page_option ); ?>" <?php selected( $activity_per_page, $per_page_option ); ?>><?php echo esc_html( $per_page_option ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</label>
+				<?php submit_button( __( 'Filter Activity Log', 'wp-plugin-mcp' ), 'secondary', 'submit', false ); ?>
+				<a class="button" href="<?php echo esc_url( admin_url( 'options-general.php?page=wp-plugin-mcp' ) ); ?>"><?php esc_html_e( 'Reset Filters', 'wp-plugin-mcp' ); ?></a>
+			</form>
+
 			<?php if ( $activity_entries ) : ?>
+				<p>
+					<?php
+					printf(
+						/* translators: 1: first row number, 2: last row number, 3: total row count. */
+						esc_html__( 'Showing %1$d-%2$d of %3$d entries.', 'wp-plugin-mcp' ),
+						esc_html( ( ( $activity_page - 1 ) * $activity_per_page ) + 1 ),
+						esc_html( min( $activity_page * $activity_per_page, $activity_total ) ),
+						esc_html( $activity_total )
+					);
+					?>
+				</p>
 				<table class="widefat striped">
 					<thead>
 						<tr>
@@ -166,6 +234,27 @@ class Admin {
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+
+				<?php if ( $activity_total_pages > 1 ) : ?>
+					<p class="tablenav-pages">
+						<?php if ( $activity_page > 1 ) : ?>
+							<a class="button" href="<?php echo esc_url( $this->get_activity_page_url( $activity_page - 1, $activity_per_page, $activity_filters ) ); ?>"><?php esc_html_e( 'Previous', 'wp-plugin-mcp' ); ?></a>
+						<?php endif; ?>
+						<span>
+							<?php
+							printf(
+								/* translators: 1: current page, 2: total pages. */
+								esc_html__( 'Page %1$d of %2$d', 'wp-plugin-mcp' ),
+								esc_html( $activity_page ),
+								esc_html( $activity_total_pages )
+							);
+							?>
+						</span>
+						<?php if ( $activity_page < $activity_total_pages ) : ?>
+							<a class="button" href="<?php echo esc_url( $this->get_activity_page_url( $activity_page + 1, $activity_per_page, $activity_filters ) ); ?>"><?php esc_html_e( 'Next', 'wp-plugin-mcp' ); ?></a>
+						<?php endif; ?>
+					</p>
+				<?php endif; ?>
 
 				<form method="post" action="<?php echo esc_url( admin_url( 'options-general.php?page=wp-plugin-mcp' ) ); ?>" style="margin-top: 12px;">
 					<?php wp_nonce_field( 'wp_forge_mcp_activity_log_settings' ); ?>
@@ -205,6 +294,45 @@ class Admin {
 			$this->activity_logger->clear();
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Activity log cleared.', 'wp-plugin-mcp' ) . '</p></div>';
 		}
+	}
+
+	/**
+	 * Get activity log filters from the current request.
+	 *
+	 * @return array<string,string>
+	 */
+	private function get_activity_filters() {
+		return array(
+			'date_from' => isset( $_GET['mcp_log_date_from'] ) ? sanitize_text_field( wp_unslash( $_GET['mcp_log_date_from'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'date_to'   => isset( $_GET['mcp_log_date_to'] ) ? sanitize_text_field( wp_unslash( $_GET['mcp_log_date_to'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'tool_name' => isset( $_GET['mcp_log_tool'] ) ? sanitize_text_field( wp_unslash( $_GET['mcp_log_tool'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'username'  => isset( $_GET['mcp_log_user'] ) ? sanitize_text_field( wp_unslash( $_GET['mcp_log_user'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'status'    => isset( $_GET['mcp_log_status'] ) ? sanitize_key( wp_unslash( $_GET['mcp_log_status'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		);
+	}
+
+	/**
+	 * Build activity log pagination URL.
+	 *
+	 * @param int                 $page Page.
+	 * @param int                 $per_page Results per page.
+	 * @param array<string,mixed> $filters Filters.
+	 * @return string
+	 */
+	private function get_activity_page_url( $page, $per_page, $filters ) {
+		return add_query_arg(
+			array(
+				'page'              => 'wp-plugin-mcp',
+				'mcp_log_page'      => $page,
+				'mcp_log_per_page'  => $per_page,
+				'mcp_log_date_from' => isset( $filters['date_from'] ) ? $filters['date_from'] : '',
+				'mcp_log_date_to'   => isset( $filters['date_to'] ) ? $filters['date_to'] : '',
+				'mcp_log_tool'      => isset( $filters['tool_name'] ) ? $filters['tool_name'] : '',
+				'mcp_log_user'      => isset( $filters['username'] ) ? $filters['username'] : '',
+				'mcp_log_status'    => isset( $filters['status'] ) ? $filters['status'] : '',
+			),
+			admin_url( 'options-general.php' )
+		);
 	}
 
 	/**

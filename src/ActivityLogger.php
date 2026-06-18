@@ -125,7 +125,7 @@ class ActivityLogger {
 				'tool_name'   => isset( $entry['tool_name'] ) ? sanitize_text_field( $entry['tool_name'] ) : '',
 				'status'      => isset( $entry['status'] ) ? sanitize_key( $entry['status'] ) : '',
 				'status_code' => isset( $entry['status_code'] ) ? (int) $entry['status_code'] : 0,
-				'duration_ms' => isset( $entry['duration_ms'] ) ? (int) $entry['duration_ms'] : 0,
+				'duration_ms' => isset( $entry['duration_ms'] ) ? max( 1, (int) $entry['duration_ms'] ) : 0,
 				'client_ip'   => $this->get_client_ip(),
 				'user_agent'  => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_textarea_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
 				'session_id'  => isset( $entry['session_id'] ) ? sanitize_text_field( $entry['session_id'] ) : '',
@@ -135,12 +135,14 @@ class ActivityLogger {
 	}
 
 	/**
-	 * Get recent log entries.
+	 * Get log entries.
 	 *
-	 * @param int $limit Number of rows.
+	 * @param array<string,mixed> $filters Filters.
+	 * @param int                 $page Page.
+	 * @param int                 $per_page Rows per page.
 	 * @return array<int,array<string,mixed>>
 	 */
-	public function get_recent_entries( $limit = 50 ) {
+	public function get_entries( $filters = array(), $page = 1, $per_page = 50 ) {
 		global $wpdb;
 
 		if ( ! isset( $wpdb ) ) {
@@ -149,11 +151,59 @@ class ActivityLogger {
 
 		$this->maybe_create_table();
 
-		$limit = max( 1, min( 200, (int) $limit ) );
-		$sql = $wpdb->prepare( "SELECT * FROM {$this->get_table_name()} ORDER BY id DESC LIMIT %d", $limit );
+		$page     = max( 1, (int) $page );
+		$per_page = max( 1, min( 200, (int) $per_page ) );
+		$offset   = ( $page - 1 ) * $per_page;
+		$where    = $this->build_where_clause( $filters );
+		$sql      = $wpdb->prepare( "SELECT * FROM {$this->get_table_name()} {$where['sql']} ORDER BY id DESC LIMIT %d OFFSET %d", array_merge( $where['args'], array( $per_page, $offset ) ) );
 		$rows = $wpdb->get_results( $sql, ARRAY_A );
 
 		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * Count log entries.
+	 *
+	 * @param array<string,mixed> $filters Filters.
+	 * @return int
+	 */
+	public function count_entries( $filters = array() ) {
+		global $wpdb;
+
+		if ( ! isset( $wpdb ) ) {
+			return 0;
+		}
+
+		$this->maybe_create_table();
+
+		$where = $this->build_where_clause( $filters );
+		$sql   = "SELECT COUNT(*) FROM {$this->get_table_name()} {$where['sql']}";
+
+		if ( $where['args'] ) {
+			$sql = $wpdb->prepare( $sql, $where['args'] );
+		}
+
+		return (int) $wpdb->get_var( $sql );
+	}
+
+	/**
+	 * Get distinct column values for filters.
+	 *
+	 * @param string $column Column name.
+	 * @return array<int,string>
+	 */
+	public function get_distinct_values( $column ) {
+		global $wpdb;
+
+		if ( ! isset( $wpdb ) || ! in_array( $column, array( 'tool_name', 'username', 'status' ), true ) ) {
+			return array();
+		}
+
+		$this->maybe_create_table();
+
+		$values = $wpdb->get_col( "SELECT DISTINCT {$column} FROM {$this->get_table_name()} WHERE {$column} <> '' ORDER BY {$column} ASC" );
+
+		return is_array( $values ) ? array_map( 'strval', $values ) : array();
 	}
 
 	/**
@@ -167,6 +217,47 @@ class ActivityLogger {
 		if ( isset( $wpdb ) ) {
 			$wpdb->query( 'TRUNCATE TABLE ' . $this->get_table_name() );
 		}
+	}
+
+	/**
+	 * Build a SQL WHERE clause for activity filters.
+	 *
+	 * @param array<string,mixed> $filters Filters.
+	 * @return array{sql:string,args:array<int,mixed>}
+	 */
+	private function build_where_clause( $filters ) {
+		$where = array();
+		$args  = array();
+
+		if ( ! empty( $filters['date_from'] ) ) {
+			$where[] = 'created_at >= %s';
+			$args[]  = sanitize_text_field( $filters['date_from'] ) . ' 00:00:00';
+		}
+
+		if ( ! empty( $filters['date_to'] ) ) {
+			$where[] = 'created_at <= %s';
+			$args[]  = sanitize_text_field( $filters['date_to'] ) . ' 23:59:59';
+		}
+
+		if ( ! empty( $filters['tool_name'] ) ) {
+			$where[] = 'tool_name = %s';
+			$args[]  = sanitize_text_field( $filters['tool_name'] );
+		}
+
+		if ( ! empty( $filters['username'] ) ) {
+			$where[] = 'username = %s';
+			$args[]  = sanitize_text_field( $filters['username'] );
+		}
+
+		if ( ! empty( $filters['status'] ) ) {
+			$where[] = 'status = %s';
+			$args[]  = sanitize_key( $filters['status'] );
+		}
+
+		return array(
+			'sql'  => $where ? 'WHERE ' . implode( ' AND ', $where ) : '',
+			'args' => $args,
+		);
 	}
 
 	/**

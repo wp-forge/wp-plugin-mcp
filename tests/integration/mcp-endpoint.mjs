@@ -419,6 +419,9 @@ await expectSuccess('wp-forge-get-site-info');
 if (!username && !password) {
   const settingsPage = await getAdminSettingsPage();
   assert(settingsPage.includes('wp-forge-get-site-info'), 'Activity log did not show a logged MCP tool call');
+  assert(settingsPage.includes('Filter Activity Log'), 'Activity log filters were not displayed');
+  assert(settingsPage.includes('mcp_log_per_page'), 'Activity log per-page control was not displayed');
+  assert(!settingsPage.includes('<td>0 ms</td>'), 'Activity log displayed a 0 ms duration');
 }
 
 await expectSuccess('wp-forge-delete-page', { id: pageId });
