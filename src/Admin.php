@@ -49,6 +49,7 @@ class Admin {
 	 */
 	public function render_page() {
 		$endpoint = rest_url( 'mcp/wp-forge' );
+		$application_passwords_url = admin_url( 'profile.php#application-passwords-section' );
 		$allow_insecure_tls = isset( $_GET['wp_forge_mcp_local_tls'] ) && '1' === $_GET['wp_forge_mcp_local_tls']; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$config_env = array(
 			'WP_API_URL'      => $endpoint,
@@ -93,8 +94,11 @@ class Admin {
 
 			<h2><?php esc_html_e( 'Authentication', 'wp-plugin-mcp' ); ?></h2>
 			<ol>
-				<li><?php esc_html_e( 'Open your WordPress user profile.', 'wp-plugin-mcp' ); ?></li>
-				<li><?php esc_html_e( 'Create an Application Password for your MCP client.', 'wp-plugin-mcp' ); ?></li>
+				<li>
+					<?php esc_html_e( 'Create an', 'wp-plugin-mcp' ); ?>
+					<a href="<?php echo esc_url( $application_passwords_url ); ?>"><?php esc_html_e( 'Application Password', 'wp-plugin-mcp' ); ?></a>
+					<?php esc_html_e( 'for your MCP client.', 'wp-plugin-mcp' ); ?>
+				</li>
 				<li><?php esc_html_e( 'Replace YOUR_WORDPRESS_USERNAME and YOUR_APPLICATION_PASSWORD in the configuration.', 'wp-plugin-mcp' ); ?></li>
 			</ol>
 
