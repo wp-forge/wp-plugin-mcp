@@ -196,6 +196,10 @@ Replace `https://example.com` with your site URL. Create a WordPress Application
 
 The same configuration is available in WordPress under **Settings > WordPress MCP** after activating the plugin.
 
+## Activity Log
+
+An optional MCP activity log is available under **Settings > WordPress MCP**. When enabled, it records each tool call's tool name, user, status, duration, IP address, user agent, and session ID. Tool arguments and responses are not logged.
+
 ## Development
 
 Install Composer dependencies to generate the PSR-4 autoloader:

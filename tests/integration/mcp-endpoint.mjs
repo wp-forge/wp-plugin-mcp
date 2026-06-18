@@ -105,6 +105,16 @@ async function post(payload, sessionId = '') {
   };
 }
 
+async function getAdminSettingsPage() {
+  const response = await fetch(new URL('/wp-admin/options-general.php?page=wp-plugin-mcp', endpointUrl.origin), {
+    headers: username && password
+      ? { Authorization: `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}` }
+      : { Cookie: authHeaders.Cookie },
+  });
+
+  return response.text();
+}
+
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
@@ -402,6 +412,14 @@ await expectError('wp-forge-update-global-styles', { id: 99999999, settings: {},
 await expectSuccess('wp-forge-list-api-functions', { namespace: 'wp/v2', methods: ['GET'], search: '/types' });
 await expectSuccess('wp-forge-get-function-details', { route: '/wp/v2/types', method: 'GET' });
 await expectSuccess('wp-forge-run-api-function', { route: '/wp/v2/types', method: 'GET' });
+
+await expectSuccess('wp-forge-update-option', { option_name: 'wp_forge_mcp_activity_log_enabled', value: '1' });
+await expectSuccess('wp-forge-get-site-info');
+
+if (!username && !password) {
+  const settingsPage = await getAdminSettingsPage();
+  assert(settingsPage.includes('wp-forge-get-site-info'), 'Activity log did not show a logged MCP tool call');
+}
 
 await expectSuccess('wp-forge-delete-page', { id: pageId });
 await expectSuccess('wp-forge-delete-post', { id: postId });
