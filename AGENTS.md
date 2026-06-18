@@ -35,9 +35,66 @@ Do not load every file in `docs/` by default. Use progressive disclosure:
 - Run focused validation before finishing; use broader checks when touching shared behavior.
 - Do not mention copied or derived implementation sources in user-facing project docs.
 
-## Useful Commands
+## Testing
 
-- `composer test`
-- `npm run test:playground`
-- `npm run playground:start`
-- `node --check tests/integration/mcp-endpoint.mjs`
+Install dependencies before running the full suite:
+
+```sh
+composer install
+npm ci
+```
+
+For a quick PHP validation pass, run:
+
+```sh
+composer test
+```
+
+For integration test syntax validation without starting WordPress Playground, run:
+
+```sh
+node --check tests/integration/mcp-endpoint.mjs
+```
+
+### Integration Tests
+
+The integration test expects WordPress Playground to already be running at `http://127.0.0.1:9400` with this plugin mounted.
+
+Run the integration tests in this order:
+
+1. Start Playground and keep the process running:
+
+```sh
+npm run playground:start
+```
+
+2. In a second terminal, run the integration test:
+
+```sh
+npm run test:playground
+```
+
+3. Stop the Playground server when finished by pressing `Ctrl+C` in the terminal running `npm run playground:start`.
+
+The Playground start command uses `playground/blueprint.json` and mounts the repository into `/wordpress/wp-content/plugins/wp-plugin-mcp`, so changes in the working tree are tested directly.
+
+### Recommended Pre-Push Check
+
+Before pushing changes that affect PHP classes, MCP tools, admin UI, tests, or workflows, run:
+
+```sh
+composer test
+node --check tests/integration/mcp-endpoint.mjs
+```
+
+Then start Playground in one terminal:
+
+```sh
+npm run playground:start
+```
+
+With Playground still running, run the integration test in another terminal:
+
+```sh
+npm run test:playground
+```
