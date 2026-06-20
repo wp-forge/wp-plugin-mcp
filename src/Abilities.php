@@ -141,6 +141,55 @@ class Abilities {
 	}
 
 	/**
+	 * Get WordPress ability names for the MCP adapter server.
+	 *
+	 * @return array<int,string>
+	 */
+	public function get_wordpress_ability_names() {
+		return array_keys( $this->abilities );
+	}
+
+	/**
+	 * Register every wp-forge ability with the WordPress Abilities API.
+	 *
+	 * @return void
+	 */
+	public function register_wordpress_abilities() {
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			return;
+		}
+
+		foreach ( $this->abilities as $name => $ability ) {
+			$capability = isset( $ability['capability'] ) ? $ability['capability'] : 'edit_posts';
+
+			wp_register_ability(
+				$name,
+				array(
+					'label'               => $ability['label'],
+					'description'         => $ability['description'],
+					'category'            => 'site',
+					'input_schema'        => $ability['input_schema'],
+					'output_schema'       => $this->response_schema(),
+					'execute_callback'    => function ( $input ) use ( $name ) {
+						return $this->call( $name, is_array( $input ) ? $input : array() );
+					},
+					'permission_callback' => function () use ( $capability ) {
+						return function_exists( 'current_user_can' ) ? current_user_can( $capability ) : false;
+					},
+					'meta'                => array(
+						'annotations'  => array(
+							'readonly'    => ! empty( $ability['annotations']['readOnlyHint'] ),
+							'destructive' => empty( $ability['annotations']['readOnlyHint'] ),
+							'idempotent'  => ! empty( $ability['annotations']['readOnlyHint'] ),
+						),
+						'show_in_rest' => true,
+					),
+				)
+			);
+		}
+	}
+
+	/**
 	 * Call an ability.
 	 *
 	 * @param string              $name Ability name.
@@ -224,6 +273,36 @@ class Abilities {
 	}
 
 	/**
+	 * Generic response schema used by all ability wrappers.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function response_schema() {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'status'     => array(
+					'type'        => 'string',
+					'description' => 'The response status.',
+				),
+				'statusCode' => array(
+					'type'        => 'integer',
+					'description' => 'The HTTP-style response status code.',
+				),
+				'message'    => array(
+					'description' => 'The ability result payload or an error message.',
+					'type'        => array( 'array', 'object', 'string', 'number', 'boolean', 'null' ),
+				),
+				'data'       => array(
+					'description' => 'The ability result data.',
+					'type'        => array( 'array', 'object', 'string', 'number', 'boolean', 'null' ),
+				),
+			),
+			'additionalProperties' => true,
+		);
+	}
+
+	/**
 	 * Register all non-WooCommerce abilities.
 	 *
 	 * @return void
@@ -256,6 +335,7 @@ class Abilities {
 			'type'                 => 'object',
 			'properties'           => $properties ? $properties : new \stdClass(),
 			'additionalProperties' => false,
+			'default'              => new \stdClass(),
 		);
 
 		if ( $required ) {

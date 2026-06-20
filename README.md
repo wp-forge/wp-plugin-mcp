@@ -1,12 +1,18 @@
 # WordPress MCP
 
-WordPress MCP adds a Model Context Protocol endpoint to WordPress at:
+WordPress MCP registers WordPress abilities and exposes them through the MCP adapter endpoint at:
 
 ```text
 /wp-json/mcp/wp-forge
 ```
 
-All MCP tools are exposed directly as top-level `wp-forge-*` tools.
+WordPress 6.9+ provides the core Abilities API. The MCP transport is provided by the `wordpress/mcp-adapter` Composer dependency.
+
+## Requirements
+
+- WordPress 6.9 or later.
+- PHP 8.2 or later.
+- Composer dependencies installed, including `wordpress/mcp-adapter`.
 
 ## Available Tools
 

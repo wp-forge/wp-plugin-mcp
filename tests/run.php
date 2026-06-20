@@ -17,7 +17,54 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
 use WP_Forge\Abilities;
-use WP_Forge\Server;
+use WP_Forge\Plugin;
+
+$registered_abilities = array();
+$added_actions        = array();
+$added_filters        = array();
+
+if ( ! function_exists( 'wp_register_ability' ) ) {
+	function wp_register_ability( $name, $args ) {
+		global $registered_abilities;
+		$registered_abilities[ $name ] = $args;
+	}
+}
+
+if ( ! function_exists( 'current_user_can' ) ) {
+	function current_user_can( $capability ) {
+		return 'do_not_allow' !== $capability;
+	}
+}
+
+if ( ! function_exists( '__' ) ) {
+	function __( $text, $domain = 'default' ) {
+		return $text;
+	}
+}
+
+if ( ! function_exists( 'add_action' ) ) {
+	function add_action( $hook_name, $callback ) {
+		global $added_actions;
+		$added_actions[ $hook_name ] = $callback;
+	}
+}
+
+if ( ! function_exists( 'add_filter' ) ) {
+	function add_filter( $hook_name, $callback ) {
+		global $added_filters;
+		$added_filters[ $hook_name ] = $callback;
+	}
+}
+
+if ( ! function_exists( 'plugin_basename' ) ) {
+	function plugin_basename( $file ) {
+		return basename( $file );
+	}
+}
+
+if ( ! defined( 'WP_FORGE_MCP_FILE' ) ) {
+	define( 'WP_FORGE_MCP_FILE', dirname( __DIR__ ) . '/wp-plugin-mcp.php' );
+}
 
 $tests_run = 0;
 
@@ -160,59 +207,43 @@ $missing_runtime = $abilities->call( 'wp-forge-posts-search', array() );
 assert_same( 'error', $missing_runtime['status'], 'WordPress-dependent ability should report missing runtime in unit tests.' );
 assert_same( 500, $missing_runtime['statusCode'], 'Missing WordPress runtime should be a server-side ability error.' );
 
-$server = new Server( $abilities );
+$wp_ability_names = $abilities->get_wordpress_ability_names();
+assert_same( 69, count( $wp_ability_names ), 'Expected all abilities to be available for the MCP adapter.' );
+assert_true( in_array( 'wp-forge/posts-search', $wp_ability_names, true ), 'Adapter ability list should use WordPress ability names.' );
 
-$needs_session = $server->handle(
-	array(
-		'jsonrpc' => '2.0',
-		'id'      => 1,
-		'method'  => 'tools/list',
-	)
-);
-assert_same( -32000, $needs_session['error']['code'], 'tools/list should require initialization.' );
+$abilities->register_wordpress_abilities();
+assert_same( 69, count( $registered_abilities ), 'Expected every ability to be registered with the WordPress Abilities API.' );
+assert_true( isset( $registered_abilities['wp-forge/posts-search'] ), 'Posts search should be registered with the WordPress Abilities API.' );
+assert_same( 'Search and filter WordPress posts with pagination', $registered_abilities['wp-forge/posts-search']['description'], 'Registered ability should preserve descriptions.' );
+assert_same( true, $registered_abilities['wp-forge/posts-search']['meta']['show_in_rest'], 'Registered abilities should be exposed through the Abilities REST API.' );
+assert_same( true, $registered_abilities['wp-forge/posts-search']['meta']['annotations']['readonly'], 'Read-only abilities should use core ability annotations.' );
+assert_same( true, $registered_abilities['wp-forge/posts-search']['permission_callback'](), 'Permission callback should allow users with the ability capability.' );
 
-$initialized = $server->handle(
-	array(
-		'jsonrpc' => '2.0',
-		'id'      => 2,
-		'method'  => 'initialize',
-		'params'  => array(
-			'protocolVersion' => '2025-06-18',
-			'capabilities'    => array(),
-			'clientInfo'      => array( 'name' => 'tests', 'version' => '1.0' ),
-		),
-	)
-);
-assert_same( 'WordPress MCP', $initialized['result']['serverInfo']['name'], 'Initialize should identify the server.' );
-assert_true( ! empty( $initialized['_session_id'] ), 'Initialize should return a session ID.' );
+$registered_result = $registered_abilities['wp-forge/posts-search']['execute_callback']( array() );
+assert_same( 'error', $registered_result['status'], 'Registered ability callback should dispatch to the catalog.' );
+assert_same( 500, $registered_result['statusCode'], 'Registered ability callback should return the ability response.' );
 
-$tools = $server->handle(
-	array(
-		'jsonrpc' => '2.0',
-		'id'      => 3,
-		'method'  => 'tools/list',
-	),
-	$initialized['_session_id']
-);
-$tool_names = array_column( $tools['result']['tools'], 'name' );
-assert_same( 69, count( $tool_names ), 'tools/list should expose every WordPress tool directly.' );
-assert_true( in_array( 'wp-forge-posts-search', $tool_names, true ), 'tools/list should expose posts search directly.' );
-assert_true( in_array( 'wp-forge-get-site-info', $tool_names, true ), 'tools/list should expose site info directly.' );
-assert_true( ! in_array( 'wp-forge-call-ability', $tool_names, true ), 'tools/list should not expose a gateway call tool.' );
+$plugin = Plugin::instance();
+$plugin->init();
+assert_true( isset( $added_actions['plugins_loaded'] ), 'Plugin should bootstrap the MCP adapter during plugins_loaded.' );
+assert_true( isset( $added_actions['wp_abilities_api_init'] ), 'Plugin should register abilities during wp_abilities_api_init.' );
+assert_true( isset( $added_actions['mcp_adapter_init'] ), 'Plugin should create the MCP server during mcp_adapter_init.' );
+assert_true( ! isset( $added_actions['rest_api_init'] ), 'Plugin should not register its own MCP REST route.' );
 
-$called = $server->handle(
-	array(
-		'jsonrpc' => '2.0',
-		'id'      => 4,
-		'method'  => 'tools/call',
-		'params'  => array(
-			'name'      => 'wp-forge-posts-search',
-			'arguments' => array(),
-		),
-	),
-	$initialized['_session_id']
-);
-assert_same( 'error', $called['result']['structuredContent']['status'], 'Direct tool calls should dispatch to the named WordPress tool.' );
-assert_same( 500, $called['result']['structuredContent']['statusCode'], 'Direct tool call should return the ability response.' );
+$adapter = new class() {
+	public $args;
+
+	public function create_server() {
+		$this->args = func_get_args();
+	}
+};
+
+$plugin->create_mcp_server( $adapter );
+assert_same( 'wp-forge', $adapter->args[0], 'Adapter server ID should be stable.' );
+assert_same( 'mcp', $adapter->args[1], 'Adapter server should keep the existing REST namespace.' );
+assert_same( 'wp-forge', $adapter->args[2], 'Adapter server should keep the existing REST route.' );
+assert_same( 'WordPress MCP', $adapter->args[3], 'Adapter server should preserve the server name.' );
+assert_same( 69, count( $adapter->args[9] ), 'Adapter server should expose every registered ability.' );
+assert_true( in_array( 'wp-forge/posts-search', $adapter->args[9], true ), 'Adapter server should expose posts search.' );
 
 echo 'Tests passed: ' . $tests_run . PHP_EOL;

@@ -10,6 +10,18 @@ jobs:
   playground:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - '8.2'
+          - '8.3'
+          - '8.4'
+          - '8.5'
+        wp-version:
+          - '6.9'
+          - '7.0'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -17,7 +29,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: ${{ matrix.php-version }}
           coverage: none
 
       - name: Setup Node.js
@@ -32,6 +44,9 @@ jobs:
         run: npm ci
 
       - name: Start Playground
+        env:
+          WP_PLAYGROUND_PHP: ${{ matrix.php-version }}
+          WP_PLAYGROUND_WP: ${{ matrix.wp-version }}
         run: |
           npm run playground:start > /tmp/wp-plugin-mcp-playground.log 2>&1 &
           echo $! > /tmp/wp-plugin-mcp-playground.pid
