@@ -60,8 +60,7 @@ WordPress 6.9+ provides the core Abilities API. The MCP transport is provided by
 | --- | --- |
 | `wp-forge-users-search` | Search and filter WordPress users with pagination |
 | `wp-forge-get-user` | Get a WordPress user by ID |
-| `wp-forge-add-user` | Add a new WordPress user |
-| `wp-forge-update-user` | Update a WordPress user by ID |
+| `wp-forge-save-user` | Create or update a WordPress user |
 | `wp-forge-delete-user` | Delete a WordPress user by ID |
 
 #### Settings
@@ -69,7 +68,7 @@ WordPress 6.9+ provides the core Abilities API. The MCP transport is provided by
 | Tool | Description |
 | --- | --- |
 | `wp-forge-get-general-settings` | Get WordPress general site settings |
-| `wp-forge-update-general-settings` | Update WordPress general site settings |
+| `wp-forge-save-general-settings` | Save WordPress general site settings |
 
 #### Site Info
 
@@ -93,7 +92,7 @@ WordPress 6.9+ provides the core Abilities API. The MCP transport is provided by
 | --- | --- |
 | `wp-forge-list-options` | List WordPress options by search or prefix |
 | `wp-forge-get-option` | Get a WordPress option value by name |
-| `wp-forge-update-option` | Update a WordPress option value by name |
+| `wp-forge-save-option` | Create or update a WordPress option value by name |
 | `wp-forge-delete-option` | Delete a WordPress option by name |
 
 #### Comments
@@ -102,8 +101,7 @@ WordPress 6.9+ provides the core Abilities API. The MCP transport is provided by
 | --- | --- |
 | `wp-forge-list-comments` | List WordPress comments with filtering and pagination |
 | `wp-forge-get-comment` | Get a WordPress comment by ID |
-| `wp-forge-add-comment` | Add a comment to a WordPress post |
-| `wp-forge-update-comment` | Update a WordPress comment by ID |
+| `wp-forge-save-comment` | Create or update a WordPress comment |
 | `wp-forge-delete-comment` | Delete a WordPress comment by ID |
 | `wp-forge-approve-comment` | Approve a WordPress comment by ID |
 | `wp-forge-spam-comment` | Mark a WordPress comment as spam by ID |
