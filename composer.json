@@ -11,6 +11,11 @@
   "scripts": {
     "test": "php tests/run.php"
   },
+  "config": {
+    "platform": {
+      "php": "8.2.0"
+    }
+  },
   "require": {
     "php": ">=8.2",
     "wordpress/mcp-adapter": "^0.5.0"
