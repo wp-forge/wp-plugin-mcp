@@ -171,28 +171,23 @@ $abilities = new Abilities();
 $all       = $abilities->list_abilities();
 $names     = array_column( $all, 'name' );
 
-assert_same( 69, count( $all ), 'Expected the WordPress ability catalog.' );
-assert_true( in_array( 'wp-forge-posts-search', $names, true ), 'Expected posts search ability.' );
+assert_same( 58, count( $all ), 'Expected the WordPress ability catalog.' );
+assert_true( in_array( 'wp-forge-search-content', $names, true ), 'Expected content search ability.' );
 assert_true( in_array( 'wp-forge-get-site-info', $names, true ), 'Expected site info ability.' );
 assert_true( in_array( 'wp-forge-run-api-function', $names, true ), 'Expected REST runner ability.' );
 assert_true( ! in_array( 'wp-forge-wc-products-search', $names, true ), 'WooCommerce abilities should not be registered.' );
 
 $expected_named_tools = array(
-	'wp-forge-posts-search',
-	'wp-forge-get-post',
-	'wp-forge-add-post',
-	'wp-forge-update-post',
-	'wp-forge-delete-post',
+	'wp-forge-list-post-types',
+	'wp-forge-search-content',
+	'wp-forge-get-content',
+	'wp-forge-save-content',
+	'wp-forge-delete-content',
 	'wp-forge-list-taxonomies',
 	'wp-forge-list-taxonomy-terms',
 	'wp-forge-get-taxonomy-term',
 	'wp-forge-save-taxonomy-term',
 	'wp-forge-delete-taxonomy-term',
-	'wp-forge-pages-search',
-	'wp-forge-get-page',
-	'wp-forge-add-page',
-	'wp-forge-update-page',
-	'wp-forge-delete-page',
 	'wp-forge-list-media',
 	'wp-forge-get-media',
 	'wp-forge-get-media-file',
@@ -200,12 +195,6 @@ $expected_named_tools = array(
 	'wp-forge-update-media',
 	'wp-forge-delete-media',
 	'wp-forge-search-media',
-	'wp-forge-list-post-types',
-	'wp-forge-cpt-search',
-	'wp-forge-get-cpt',
-	'wp-forge-add-cpt',
-	'wp-forge-update-cpt',
-	'wp-forge-delete-cpt',
 	'wp-forge-users-search',
 	'wp-forge-get-user',
 	'wp-forge-add-user',
@@ -255,20 +244,20 @@ foreach ( $names as $name ) {
 	assert_true( false === strpos( $name, 'woocommerce-' ), 'WooCommerce-native tools should not be exposed.' );
 }
 
-$filtered = $abilities->list_abilities( array( 'name_prefix' => 'wp-forge-posts' ) );
-assert_same( array( 'wp-forge-posts-search' ), array_column( $filtered, 'name' ), 'Prefix filtering should find post search only.' );
+$filtered = $abilities->list_abilities( array( 'name_prefix' => 'wp-forge-search' ) );
+assert_same( array( 'wp-forge-search-content', 'wp-forge-search-media' ), array_column( $filtered, 'name' ), 'Prefix filtering should find search tools.' );
 
-$schema = $abilities->get_schema( 'wp-forge-add-post' );
-assert_same( 'wp-forge-add-post', $schema['name'], 'Schema lookup should accept MCP tool names.' );
-assert_same( false, $schema['annotations']['readOnlyHint'], 'Add post should be marked writable.' );
+$schema = $abilities->get_schema( 'wp-forge-save-content' );
+assert_same( 'wp-forge-save-content', $schema['name'], 'Schema lookup should accept MCP tool names.' );
+assert_same( false, $schema['annotations']['readOnlyHint'], 'Save content should be marked writable.' );
 
 $post_types_schema = $abilities->get_schema( 'wp-forge-list-post-types' );
 assert_same( 'boolean', $post_types_schema['input_schema']['properties']['public']['type'], 'Post type list should expose public filtering.' );
 
 $direct_tools = $abilities->list_tools();
 $direct_tool_names = array_column( $direct_tools, 'name' );
-assert_same( 69, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
-assert_true( in_array( 'wp-forge-posts-search', $direct_tool_names, true ), 'Direct tool list should include posts search.' );
+assert_same( 58, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
+assert_true( in_array( 'wp-forge-search-content', $direct_tool_names, true ), 'Direct tool list should include content search.' );
 assert_true( in_array( 'wp-forge-get-active-theme', $direct_tool_names, true ), 'Direct tool list should include active theme.' );
 assert_true( ! in_array( 'wp-forge-list-abilities', $direct_tool_names, true ), 'Gateway list tool should not be exposed.' );
 assert_true( ! in_array( 'wp-forge-get-ability-schema', $direct_tool_names, true ), 'Gateway schema tool should not be exposed.' );
@@ -292,7 +281,7 @@ $disabled_wp_cli = $abilities->call( 'wp-forge-run-wp-cli-command', array( 'args
 assert_same( 'error', $disabled_wp_cli['status'], 'WP-CLI tool should be disabled by default.' );
 assert_same( 403, $disabled_wp_cli['statusCode'], 'Disabled WP-CLI tool should return a permission-style error.' );
 
-$missing_runtime = $abilities->call( 'wp-forge-posts-search', array() );
+$missing_runtime = $abilities->call( 'wp-forge-search-content', array( 'post_type' => 'post' ) );
 assert_same( 'error', $missing_runtime['status'], 'WordPress-dependent ability should report missing runtime in unit tests.' );
 assert_same( 500, $missing_runtime['statusCode'], 'Missing WordPress runtime should be a server-side ability error.' );
 
@@ -309,18 +298,18 @@ $public_hierarchical_post_types = $abilities->call( 'wp-forge-list-post-types', 
 assert_same( array( 'page' ), array_column( $public_hierarchical_post_types['message']['post_types'], 'slug' ), 'Post type list should pass filters through to get_post_types().' );
 
 $wp_ability_names = $abilities->get_wordpress_ability_names();
-assert_same( 69, count( $wp_ability_names ), 'Expected all abilities to be available for the MCP adapter.' );
-assert_true( in_array( 'wp-forge/posts-search', $wp_ability_names, true ), 'Adapter ability list should use WordPress ability names.' );
+assert_same( 58, count( $wp_ability_names ), 'Expected all abilities to be available for the MCP adapter.' );
+assert_true( in_array( 'wp-forge/search-content', $wp_ability_names, true ), 'Adapter ability list should use WordPress ability names.' );
 
 $abilities->register_wordpress_abilities();
-assert_same( 69, count( $registered_abilities ), 'Expected every ability to be registered with the WordPress Abilities API.' );
-assert_true( isset( $registered_abilities['wp-forge/posts-search'] ), 'Posts search should be registered with the WordPress Abilities API.' );
-assert_same( 'Search and filter WordPress posts with pagination', $registered_abilities['wp-forge/posts-search']['description'], 'Registered ability should preserve descriptions.' );
-assert_same( true, $registered_abilities['wp-forge/posts-search']['meta']['show_in_rest'], 'Registered abilities should be exposed through the Abilities REST API.' );
-assert_same( true, $registered_abilities['wp-forge/posts-search']['meta']['annotations']['readonly'], 'Read-only abilities should use core ability annotations.' );
-assert_same( true, $registered_abilities['wp-forge/posts-search']['permission_callback'](), 'Permission callback should allow users with the ability capability.' );
+assert_same( 58, count( $registered_abilities ), 'Expected every ability to be registered with the WordPress Abilities API.' );
+assert_true( isset( $registered_abilities['wp-forge/search-content'] ), 'Content search should be registered with the WordPress Abilities API.' );
+assert_same( 'Search and filter content for any registered post type', $registered_abilities['wp-forge/search-content']['description'], 'Registered ability should preserve descriptions.' );
+assert_same( true, $registered_abilities['wp-forge/search-content']['meta']['show_in_rest'], 'Registered abilities should be exposed through the Abilities REST API.' );
+assert_same( true, $registered_abilities['wp-forge/search-content']['meta']['annotations']['readonly'], 'Read-only abilities should use core ability annotations.' );
+assert_same( true, $registered_abilities['wp-forge/search-content']['permission_callback'](), 'Permission callback should allow users with the ability capability.' );
 
-$registered_result = $registered_abilities['wp-forge/posts-search']['execute_callback']( array() );
+$registered_result = $registered_abilities['wp-forge/search-content']['execute_callback']( array( 'post_type' => 'post' ) );
 assert_same( 'error', $registered_result['status'], 'Registered ability callback should dispatch to the catalog.' );
 assert_same( 500, $registered_result['statusCode'], 'Registered ability callback should return the ability response.' );
 
@@ -344,7 +333,7 @@ assert_same( 'wp-forge', $adapter->args[0], 'Adapter server ID should be stable.
 assert_same( 'mcp', $adapter->args[1], 'Adapter server should keep the existing REST namespace.' );
 assert_same( 'wp-forge', $adapter->args[2], 'Adapter server should keep the existing REST route.' );
 assert_same( 'WordPress MCP', $adapter->args[3], 'Adapter server should preserve the server name.' );
-assert_same( 69, count( $adapter->args[9] ), 'Adapter server should expose every registered ability.' );
-assert_true( in_array( 'wp-forge/posts-search', $adapter->args[9], true ), 'Adapter server should expose posts search.' );
+assert_same( 58, count( $adapter->args[9] ), 'Adapter server should expose every registered ability.' );
+assert_true( in_array( 'wp-forge/search-content', $adapter->args[9], true ), 'Adapter server should expose content search.' );
 
 echo 'Tests passed: ' . $tests_run . PHP_EOL;

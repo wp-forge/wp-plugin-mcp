@@ -18,15 +18,17 @@ WordPress 6.9+ provides the core Abilities API. The MCP transport is provided by
 
 ### Content Management
 
-#### Posts
+#### Content
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-posts-search` | Search and filter WordPress posts with pagination |
-| `wp-forge-get-post` | Get a WordPress post by ID |
-| `wp-forge-add-post` | Add a new WordPress post |
-| `wp-forge-update-post` | Update a WordPress post by ID |
-| `wp-forge-delete-post` | Delete a WordPress post by ID |
+| `wp-forge-list-post-types` | List registered WordPress post types with runtime validation metadata |
+| `wp-forge-search-content` | Search and filter content for any registered post type |
+| `wp-forge-get-content` | Get a content item from any registered post type by ID or slug |
+| `wp-forge-save-content` | Create or update content for any registered post type |
+| `wp-forge-delete-content` | Delete content from any registered post type |
+
+`wp-forge-list-post-types` returns each post type's slug, label, hierarchical status, public status, supported features, registered taxonomies, and REST base. The content tools use the same runtime metadata to validate conditional fields: `parent_id` is accepted only for hierarchical post types, and `taxonomies` may only include taxonomies registered to the selected `post_type`.
 
 #### Taxonomies
 
@@ -37,16 +39,6 @@ WordPress 6.9+ provides the core Abilities API. The MCP transport is provided by
 | `wp-forge-get-taxonomy-term` | Get a term from a registered taxonomy by ID |
 | `wp-forge-save-taxonomy-term` | Create or update a term in a registered taxonomy |
 | `wp-forge-delete-taxonomy-term` | Delete a term from a registered taxonomy |
-
-#### Pages
-
-| Tool | Description |
-| --- | --- |
-| `wp-forge-pages-search` | Search and filter WordPress pages with pagination |
-| `wp-forge-get-page` | Get a WordPress page by ID |
-| `wp-forge-add-page` | Add a new WordPress page |
-| `wp-forge-update-page` | Update a WordPress page by ID |
-| `wp-forge-delete-page` | Delete a WordPress page by ID |
 
 #### Media
 
@@ -59,17 +51,6 @@ WordPress 6.9+ provides the core Abilities API. The MCP transport is provided by
 | `wp-forge-update-media` | Update a WordPress media item |
 | `wp-forge-delete-media` | Delete a WordPress media item permanently |
 | `wp-forge-search-media` | Search WordPress media by title, caption, or description |
-
-#### Custom Post Types
-
-| Tool | Description |
-| --- | --- |
-| `wp-forge-list-post-types` | List all registered WordPress post types |
-| `wp-forge-cpt-search` | Search and filter content items within a custom post type |
-| `wp-forge-get-cpt` | Get a single content item from a custom post type by ID |
-| `wp-forge-add-cpt` | Create a new content item within an existing custom post type |
-| `wp-forge-update-cpt` | Update an existing content item in a custom post type by ID |
-| `wp-forge-delete-cpt` | Permanently delete a content item from a custom post type by ID |
 
 ### Site Management
 

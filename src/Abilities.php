@@ -430,13 +430,13 @@ class Abilities {
 	}
 
 	/**
-	 * Query posts.
+	 * Search content items.
 	 *
 	 * @param string              $post_type Post type.
 	 * @param array<string,mixed> $params Params.
 	 * @return array<string,mixed>|array<int,array<string,mixed>>
 	 */
-	private function query_posts( $post_type, $params ) {
+	private function search_content_items( $post_type, $params ) {
 		$missing = $this->require_wordpress();
 		if ( $missing ) {
 			return $missing;
@@ -454,17 +454,199 @@ class Abilities {
 			$args['post_mime_type'] = $params['mime_type'];
 		}
 
-		return array_map( array( $this, 'format_post' ), get_posts( $args ) );
+		return array_map( array( $this, 'format_content_item' ), get_posts( $args ) );
 	}
 
 	/**
-	 * Get a post item.
+	 * Search content for any registered post type.
+	 *
+	 * @param array<string,mixed> $params Params.
+	 * @return array<string,mixed>|array<int,array<string,mixed>>
+	 */
+	private function search_content( $params ) {
+		$missing = $this->require_wordpress();
+		if ( $missing ) {
+			return $missing;
+		}
+
+		$post_type_check = $this->validate_post_type( $params['post_type'] );
+		if ( isset( $post_type_check['status'] ) && 'error' === $post_type_check['status'] ) {
+			return $post_type_check;
+		}
+
+		$args = array(
+			'post_type'      => $post_type_check['post_type'],
+			'post_status'    => isset( $params['status'] ) ? $params['status'] : 'publish',
+			's'              => isset( $params['query'] ) ? $params['query'] : '',
+			'paged'          => isset( $params['page'] ) ? max( 1, (int) $params['page'] ) : 1,
+			'posts_per_page' => isset( $params['per_page'] ) ? max( 1, min( 100, (int) $params['per_page'] ) ) : 10,
+			'orderby'        => $this->normalize_content_orderby( isset( $params['orderby'] ) ? $params['orderby'] : 'date' ),
+			'order'          => $this->normalize_sort_order( isset( $params['order'] ) ? $params['order'] : 'desc' ),
+		);
+
+		if ( isset( $params['author'] ) ) {
+			$args['author'] = (int) $params['author'];
+		}
+
+		if ( ! empty( $params['taxonomy_query'] ) && is_array( $params['taxonomy_query'] ) ) {
+			$taxonomy = isset( $params['taxonomy_query']['taxonomy'] ) ? (string) $params['taxonomy_query']['taxonomy'] : '';
+			$terms    = isset( $params['taxonomy_query']['terms'] ) && is_array( $params['taxonomy_query']['terms'] ) ? $params['taxonomy_query']['terms'] : array();
+
+			$taxonomy_check = $this->validate_post_type_taxonomy( $post_type_check, $taxonomy );
+			if ( isset( $taxonomy_check['status'] ) && 'error' === $taxonomy_check['status'] ) {
+				return $taxonomy_check;
+			}
+
+			if ( '' === $taxonomy || array() === $terms ) {
+				return Response::error( 'taxonomy_query requires a taxonomy and at least one term.', 400 );
+			}
+
+			$args['tax_query'] = array(
+				array(
+					'taxonomy' => $taxonomy,
+					'field'    => $this->taxonomy_terms_are_ids( $terms ) ? 'term_id' : 'slug',
+					'terms'    => $terms,
+				),
+			);
+		}
+
+		if ( ! empty( $params['date_query'] ) && is_array( $params['date_query'] ) ) {
+			$date_query = array();
+			foreach ( array( 'after', 'before' ) as $key ) {
+				if ( ! empty( $params['date_query'][ $key ] ) ) {
+					$date_query[ $key ] = (string) $params['date_query'][ $key ];
+				}
+			}
+			if ( $date_query ) {
+				$args['date_query'] = array( $date_query );
+			}
+		}
+
+		return array_map( array( $this, 'format_content_item' ), get_posts( $args ) );
+	}
+
+	/**
+	 * Get content by ID or slug.
+	 *
+	 * @param array<string,mixed> $params Params.
+	 * @return array<string,mixed>
+	 */
+	private function get_content( $params ) {
+		$post_type_check = $this->validate_post_type( $params['post_type'] );
+		if ( isset( $post_type_check['status'] ) && 'error' === $post_type_check['status'] ) {
+			return $post_type_check;
+		}
+
+		if ( isset( $params['id'] ) ) {
+			$item = $this->get_content_item( (int) $params['id'], $post_type_check['post_type'] );
+		} elseif ( ! empty( $params['slug'] ) ) {
+			$item = $this->get_content_item_by_slug( $post_type_check['post_type'], (string) $params['slug'] );
+		} else {
+			return Response::error( 'get-content requires either id or slug.', 400 );
+		}
+
+		if ( isset( $item['status'] ) && 'error' === $item['status'] ) {
+			return $item;
+		}
+
+		return $this->filter_content_fields( $item, isset( $params['fields'] ) && is_array( $params['fields'] ) ? $params['fields'] : array() );
+	}
+
+	/**
+	 * Create or update content.
+	 *
+	 * @param array<string,mixed> $params Params.
+	 * @return array<string,mixed>
+	 */
+	private function save_content( $params ) {
+		if ( ! function_exists( 'wp_insert_post' ) || ! function_exists( 'wp_update_post' ) ) {
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
+		}
+
+		$post_type_check = $this->validate_post_type( $params['post_type'] );
+		if ( isset( $post_type_check['status'] ) && 'error' === $post_type_check['status'] ) {
+			return $post_type_check;
+		}
+
+		$is_update = isset( $params['id'] );
+		if ( ! $is_update && ( ! isset( $params['title'] ) || '' === trim( (string) $params['title'] ) ) ) {
+			return Response::error( 'save-content requires title when creating content.', 400 );
+		}
+
+		if ( isset( $params['parent_id'] ) ) {
+			$parent_check = $this->validate_content_parent( $post_type_check, (int) $params['parent_id'] );
+			if ( isset( $parent_check['status'] ) && 'error' === $parent_check['status'] ) {
+				return $parent_check;
+			}
+		}
+
+		if ( isset( $params['taxonomies'] ) ) {
+			$taxonomy_check = $this->validate_content_taxonomies( $post_type_check, $params['taxonomies'] );
+			if ( isset( $taxonomy_check['status'] ) && 'error' === $taxonomy_check['status'] ) {
+				return $taxonomy_check;
+			}
+		}
+
+		$post = $this->content_post_args( $post_type_check['post_type'], $params );
+
+		if ( $is_update ) {
+			$existing = get_post( (int) $params['id'] );
+			if ( ! $existing ) {
+				return Response::error( 'Content item not found.', 404 );
+			}
+			if ( $post_type_check['post_type'] !== $existing->post_type ) {
+				return Response::error( 'Content item ' . (int) $params['id'] . ' is not a ' . $post_type_check['post_type'] . '.', 400 );
+			}
+
+			$post['ID'] = (int) $params['id'];
+			$id         = Response::unwrap_wp_error( wp_update_post( $post, true ) );
+		} else {
+			$id = Response::unwrap_wp_error( wp_insert_post( $post, true ) );
+		}
+
+		if ( is_array( $id ) && isset( $id['status'] ) && 'error' === $id['status'] ) {
+			return $id;
+		}
+
+		$this->apply_content_taxonomies( (int) $id, isset( $params['taxonomies'] ) && is_array( $params['taxonomies'] ) ? $params['taxonomies'] : array() );
+		$this->apply_content_meta( (int) $id, isset( $params['meta'] ) && is_array( $params['meta'] ) ? $params['meta'] : array() );
+		if ( isset( $params['featured_media_id'] ) ) {
+			$this->apply_featured_media( (int) $id, (int) $params['featured_media_id'] );
+		}
+
+		return $this->get_content_item( (int) $id, $post_type_check['post_type'] );
+	}
+
+	/**
+	 * Delete content.
+	 *
+	 * @param array<string,mixed> $params Params.
+	 * @return array<string,mixed>
+	 */
+	private function delete_content( $params ) {
+		$item = $this->get_content_item( (int) $params['id'], $params['post_type'] );
+		if ( isset( $item['status'] ) && 'error' === $item['status'] ) {
+			return $item;
+		}
+
+		$force  = isset( $params['force'] ) ? (bool) $params['force'] : false;
+		$result = function_exists( 'wp_delete_post' ) ? wp_delete_post( (int) $params['id'], $force ) : false;
+
+		return array(
+			'id'      => (int) $params['id'],
+			'deleted' => (bool) $result,
+			'force'   => $force,
+		);
+	}
+
+	/**
+	 * Get a content item.
 	 *
 	 * @param int    $id Post ID.
 	 * @param string $post_type Expected post type.
 	 * @return array<string,mixed>
 	 */
-	private function get_post_item( $id, $post_type ) {
+	private function get_content_item( $id, $post_type ) {
 		$missing = $this->require_wordpress();
 		if ( $missing ) {
 			return $missing;
@@ -475,17 +657,46 @@ class Abilities {
 			return Response::error( 'Item not found.', 404 );
 		}
 
-		return $this->format_post( $post );
+		return $this->format_content_item( $post );
 	}
 
 	/**
-	 * Insert post item.
+	 * Get a content item by slug.
+	 *
+	 * @param string $post_type Post type.
+	 * @param string $slug Post slug.
+	 * @return array<string,mixed>
+	 */
+	private function get_content_item_by_slug( $post_type, $slug ) {
+		$missing = $this->require_wordpress();
+		if ( $missing ) {
+			return $missing;
+		}
+
+		$posts = get_posts(
+			array(
+				'post_type'      => $post_type,
+				'name'           => $slug,
+				'post_status'    => 'any',
+				'posts_per_page' => 1,
+			)
+		);
+
+		if ( empty( $posts ) ) {
+			return Response::error( 'Item not found.', 404 );
+		}
+
+		return $this->format_content_item( $posts[0] );
+	}
+
+	/**
+	 * Insert a content item.
 	 *
 	 * @param string              $post_type Post type.
 	 * @param array<string,mixed> $params Params.
 	 * @return array<string,mixed>
 	 */
-	private function insert_post_item( $post_type, $params ) {
+	private function insert_content_item( $post_type, $params ) {
 		$missing = $this->require_wordpress();
 		if ( $missing ) {
 			return $missing;
@@ -506,15 +717,15 @@ class Abilities {
 	}
 
 	/**
-	 * Update post item.
+	 * Update a content item.
 	 *
 	 * @param int                 $id Post ID.
 	 * @param string              $post_type Post type.
 	 * @param array<string,mixed> $params Params.
 	 * @return array<string,mixed>|int
 	 */
-	private function update_post_item( $id, $post_type, $params ) {
-		$item = $this->get_post_item( $id, $post_type );
+	private function update_content_item( $id, $post_type, $params ) {
+		$item = $this->get_content_item( $id, $post_type );
 		if ( isset( $item['status'] ) && 'error' === $item['status'] ) {
 			return $item;
 		}
@@ -530,14 +741,14 @@ class Abilities {
 	}
 
 	/**
-	 * Delete post item.
+	 * Delete a content item.
 	 *
 	 * @param int    $id Post ID.
 	 * @param string $post_type Post type.
 	 * @return array<string,mixed>|bool
 	 */
-	private function delete_post_item( $id, $post_type ) {
-		$item = $this->get_post_item( $id, $post_type );
+	private function delete_content_item( $id, $post_type ) {
+		$item = $this->get_content_item( $id, $post_type );
 		if ( isset( $item['status'] ) && 'error' === $item['status'] ) {
 			return $item;
 		}
@@ -546,26 +757,263 @@ class Abilities {
 	}
 
 	/**
-	 * Format a post object.
+	 * Format a content item.
 	 *
 	 * @param mixed $post Post object.
 	 * @return array<string,mixed>
 	 */
-	private function format_post( $post ) {
+	private function format_content_item( $post ) {
 		return array(
-			'id'          => (int) $post->ID,
-			'type'        => $post->post_type,
-			'status'      => $post->post_status,
-			'title'       => function_exists( 'get_the_title' ) ? get_the_title( $post ) : $post->post_title,
-			'slug'        => $post->post_name,
-			'link'        => function_exists( 'get_permalink' ) ? get_permalink( $post ) : '',
-			'date'        => $post->post_date,
-			'modified'    => $post->post_modified,
-			'excerpt'     => $post->post_excerpt,
-			'content'     => $post->post_content,
-			'mime_type'   => isset( $post->post_mime_type ) ? $post->post_mime_type : '',
-			'source_url'  => function_exists( 'wp_get_attachment_url' ) && 'attachment' === $post->post_type ? wp_get_attachment_url( $post->ID ) : '',
+			'id'                => (int) $post->ID,
+			'type'              => $post->post_type,
+			'status'            => $post->post_status,
+			'title'             => function_exists( 'get_the_title' ) ? get_the_title( $post ) : $post->post_title,
+			'slug'              => $post->post_name,
+			'link'              => function_exists( 'get_permalink' ) ? get_permalink( $post ) : '',
+			'date'              => $post->post_date,
+			'modified'          => $post->post_modified,
+			'excerpt'           => $post->post_excerpt,
+			'content'           => $post->post_content,
+			'author'            => isset( $post->post_author ) ? (int) $post->post_author : 0,
+			'parent_id'         => isset( $post->post_parent ) ? (int) $post->post_parent : 0,
+			'featured_media_id' => function_exists( 'get_post_thumbnail_id' ) ? (int) get_post_thumbnail_id( $post ) : 0,
+			'mime_type'         => isset( $post->post_mime_type ) ? $post->post_mime_type : '',
+			'source_url'        => function_exists( 'wp_get_attachment_url' ) && 'attachment' === $post->post_type ? wp_get_attachment_url( $post->ID ) : '',
 		);
+	}
+
+	/**
+	 * Validate a post type and return its runtime metadata.
+	 *
+	 * @param string $post_type Post type slug.
+	 * @return array<string,mixed>
+	 */
+	private function validate_post_type( $post_type ) {
+		if ( ! function_exists( 'get_post_types' ) ) {
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
+		}
+
+		$post_type = sanitize_key( $post_type );
+		$type      = function_exists( 'get_post_type_object' ) ? get_post_type_object( $post_type ) : null;
+		if ( ! $type ) {
+			$types = get_post_types( array(), 'objects' );
+			$type  = isset( $types[ $post_type ] ) ? $types[ $post_type ] : null;
+		}
+
+		if ( ! $type ) {
+			return Response::error( 'Unknown post type: ' . $post_type, 404 );
+		}
+
+		return array(
+			'post_type'    => $post_type,
+			'type'         => $type,
+			'hierarchical' => (bool) $type->hierarchical,
+			'taxonomies'   => $this->get_post_type_taxonomies( $post_type, $type ),
+		);
+	}
+
+	/**
+	 * Validate parent assignment for a content type.
+	 *
+	 * @param array<string,mixed> $post_type_check Post type metadata.
+	 * @param int                 $parent_id Parent content ID.
+	 * @return array<string,mixed>
+	 */
+	private function validate_content_parent( $post_type_check, $parent_id ) {
+		if ( ! $post_type_check['hierarchical'] ) {
+			return Response::error( 'Post type ' . $post_type_check['post_type'] . ' does not support parent_id because it is not hierarchical.', 400 );
+		}
+
+		if ( $parent_id > 0 && function_exists( 'get_post' ) ) {
+			$parent = get_post( $parent_id );
+			if ( ! $parent || $post_type_check['post_type'] !== $parent->post_type ) {
+				return Response::error( 'parent_id must reference an existing ' . $post_type_check['post_type'] . ' item.', 400 );
+			}
+		}
+
+		return array( 'valid' => true );
+	}
+
+	/**
+	 * Validate a taxonomy against a post type.
+	 *
+	 * @param array<string,mixed> $post_type_check Post type metadata.
+	 * @param string              $taxonomy Taxonomy slug.
+	 * @return array<string,mixed>
+	 */
+	private function validate_post_type_taxonomy( $post_type_check, $taxonomy ) {
+		if ( '' === $taxonomy || ! in_array( $taxonomy, $post_type_check['taxonomies'], true ) ) {
+			return Response::error( 'Taxonomy ' . $taxonomy . ' is not registered for post type ' . $post_type_check['post_type'] . '.', 400 );
+		}
+
+		return array( 'valid' => true );
+	}
+
+	/**
+	 * Validate taxonomy assignments for a content type.
+	 *
+	 * @param array<string,mixed> $post_type_check Post type metadata.
+	 * @param mixed               $taxonomies Taxonomy assignments.
+	 * @return array<string,mixed>
+	 */
+	private function validate_content_taxonomies( $post_type_check, $taxonomies ) {
+		if ( ! is_array( $taxonomies ) ) {
+			return Response::error( 'taxonomies must be an object keyed by taxonomy slug.', 400 );
+		}
+
+		foreach ( $taxonomies as $taxonomy => $terms ) {
+			$taxonomy_check = $this->validate_post_type_taxonomy( $post_type_check, (string) $taxonomy );
+			if ( isset( $taxonomy_check['status'] ) && 'error' === $taxonomy_check['status'] ) {
+				return $taxonomy_check;
+			}
+
+			if ( ! is_array( $terms ) ) {
+				return Response::error( 'Taxonomy ' . $taxonomy . ' must be an array of term IDs, slugs, or names.', 400 );
+			}
+		}
+
+		return array( 'valid' => true );
+	}
+
+	/**
+	 * Build wp_insert_post/wp_update_post args for content.
+	 *
+	 * @param string              $post_type Post type slug.
+	 * @param array<string,mixed> $params Params.
+	 * @return array<string,mixed>
+	 */
+	private function content_post_args( $post_type, $params ) {
+		$post = array( 'post_type' => $post_type );
+		$map  = array(
+			'title'     => 'post_title',
+			'content'   => 'post_content',
+			'excerpt'   => 'post_excerpt',
+			'status'    => 'post_status',
+			'author'    => 'post_author',
+			'parent_id' => 'post_parent',
+		);
+
+		foreach ( $map as $param => $field ) {
+			if ( isset( $params[ $param ] ) ) {
+				$post[ $field ] = in_array( $param, array( 'author', 'parent_id' ), true ) ? (int) $params[ $param ] : $params[ $param ];
+			}
+		}
+
+		if ( ! isset( $post['post_status'] ) ) {
+			$post['post_status'] = 'draft';
+		}
+
+		return $post;
+	}
+
+	/**
+	 * Apply taxonomy assignments to content.
+	 *
+	 * @param int                 $id Content item ID.
+	 * @param array<string,mixed> $taxonomies Taxonomy assignments.
+	 * @return void
+	 */
+	private function apply_content_taxonomies( $id, $taxonomies ) {
+		if ( ! function_exists( 'wp_set_object_terms' ) ) {
+			return;
+		}
+
+		foreach ( $taxonomies as $taxonomy => $terms ) {
+			wp_set_object_terms( $id, $terms, (string) $taxonomy );
+		}
+	}
+
+	/**
+	 * Apply post meta values to content.
+	 *
+	 * @param int                 $id Content item ID.
+	 * @param array<string,mixed> $meta Meta values.
+	 * @return void
+	 */
+	private function apply_content_meta( $id, $meta ) {
+		if ( ! function_exists( 'update_post_meta' ) ) {
+			return;
+		}
+
+		foreach ( $meta as $key => $value ) {
+			update_post_meta( $id, (string) $key, $value );
+		}
+	}
+
+	/**
+	 * Apply featured media to content.
+	 *
+	 * @param int $id Content item ID.
+	 * @param int $featured_media_id Attachment ID.
+	 * @return void
+	 */
+	private function apply_featured_media( $id, $featured_media_id ) {
+		if ( function_exists( 'set_post_thumbnail' ) ) {
+			set_post_thumbnail( $id, $featured_media_id );
+			return;
+		}
+
+		if ( function_exists( 'update_post_meta' ) ) {
+			update_post_meta( $id, '_thumbnail_id', $featured_media_id );
+		}
+	}
+
+	/**
+	 * Return only requested content fields.
+	 *
+	 * @param array<string,mixed> $item Content item.
+	 * @param array<int,string>   $fields Field names.
+	 * @return array<string,mixed>
+	 */
+	private function filter_content_fields( $item, $fields ) {
+		if ( ! $fields ) {
+			return $item;
+		}
+
+		$out = array();
+		foreach ( $fields as $field ) {
+			if ( array_key_exists( $field, $item ) ) {
+				$out[ $field ] = $item[ $field ];
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Normalize search ordering field.
+	 *
+	 * @param string $orderby Orderby value.
+	 * @return string
+	 */
+	private function normalize_content_orderby( $orderby ) {
+		return in_array( $orderby, array( 'date', 'title', 'modified', 'menu_order' ), true ) ? $orderby : 'date';
+	}
+
+	/**
+	 * Normalize sort direction.
+	 *
+	 * @param string $order Sort order.
+	 * @return string
+	 */
+	private function normalize_sort_order( $order ) {
+		return 'asc' === strtolower( (string) $order ) ? 'ASC' : 'DESC';
+	}
+
+	/**
+	 * Determine whether taxonomy terms are all IDs.
+	 *
+	 * @param array<int,mixed> $terms Terms.
+	 * @return bool
+	 */
+	private function taxonomy_terms_are_ids( $terms ) {
+		foreach ( $terms as $term ) {
+			if ( ! is_int( $term ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -1054,7 +1502,7 @@ class Abilities {
 	 * @return mixed
 	 */
 	private function get_global_styles( $id ) {
-		return $this->get_post_item( $id, 'wp_global_styles' );
+		return $this->get_content_item( $id, 'wp_global_styles' );
 	}
 
 	/**
@@ -1072,7 +1520,7 @@ class Abilities {
 			}
 		}
 
-		return $this->update_post_item( $id, 'wp_global_styles', array( 'content' => wp_json_encode( $content ) ) );
+		return $this->update_content_item( $id, 'wp_global_styles', array( 'content' => wp_json_encode( $content ) ) );
 	}
 
 	/**
