@@ -105,6 +105,26 @@ async function post(payload, sessionId = '') {
   };
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function initializeWithRetry(payload) {
+  let lastResponse = null;
+
+  for (let attempt = 1; attempt <= 30; attempt++) {
+    lastResponse = await post(payload);
+
+    if (lastResponse.status !== 404) {
+      return lastResponse;
+    }
+
+    await sleep(1000);
+  }
+
+  return lastResponse;
+}
+
 async function getAdminSettingsPage() {
   const response = await fetch(new URL('/wp-admin/options-general.php?page=wp-plugin-mcp', endpointUrl.origin), {
     headers: username && password
@@ -121,7 +141,7 @@ function assert(condition, message) {
   }
 }
 
-const initialized = await post({
+const initialized = await initializeWithRetry({
   jsonrpc: '2.0',
   id: 1,
   method: 'initialize',
