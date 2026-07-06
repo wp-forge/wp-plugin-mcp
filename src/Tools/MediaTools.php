@@ -51,10 +51,10 @@ trait MediaTools {
 		);
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'list-media', 'List Media', 'List WordPress media items with pagination and filtering', $list_schema, function ( $params ) {
-			return $this->query_posts( 'attachment', array_merge( array( 'status' => 'inherit' ), $params ) );
+			return $this->search_content_items( 'attachment', array_merge( array( 'status' => 'inherit' ), $params ) );
 		}, true, 'upload_files' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'get-media', 'Get Media', 'Get a WordPress media item by ID', $id_schema, function ( $params ) {
-			return $this->get_post_item( (int) $params['id'], 'attachment' );
+			return $this->get_content_item( (int) $params['id'], 'attachment' );
 		}, true, 'upload_files' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'get-media-file', 'Get Media File', 'Get the actual file content of a WordPress media item', $id_schema, function ( $params ) {
 			return $this->get_media_file( (int) $params['id'] );
@@ -66,10 +66,10 @@ trait MediaTools {
 			return $this->update_media( (int) $params['id'], $params );
 		}, false, 'upload_files' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'delete-media', 'Delete Media', 'Delete a WordPress media item permanently', $id_schema, function ( $params ) {
-			return $this->delete_post_item( (int) $params['id'], 'attachment' );
+			return $this->delete_content_item( (int) $params['id'], 'attachment' );
 		}, false, 'upload_files' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'search-media', 'Search Media', 'Search WordPress media by title, caption, or description', $list_schema, function ( $params ) {
-			return $this->query_posts( 'attachment', array_merge( array( 'status' => 'inherit' ), $params ) );
+			return $this->search_content_items( 'attachment', array_merge( array( 'status' => 'inherit' ), $params ) );
 		}, true, 'upload_files' );
 	}
 }
