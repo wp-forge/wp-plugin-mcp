@@ -1,0 +1,89 @@
+name: Upload Release Asset
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve release tag
+        id: release
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+
+          if ! printf '%s' "$tag" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Release asset uploads only run for numeric semver tags like 1.0.0 or 2.40.4."
+            exit 1
+          fi
+
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup workflow context
+        id: workflow
+        working-directory: ${{ runner.temp }}
+        run: |
+          mkdir dist
+          echo "DIST=${PWD}/dist" >> "$GITHUB_OUTPUT"
+          echo "PACKAGE=wp-plugin-mcp" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+
+      - name: Validate plugin version
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          plugin_header_version="$(awk -F ': ' '/^[[:space:]]*\* Version:/ { print $2; exit }' wp-plugin-mcp.php)"
+          plugin_constant_version="$(sed -n "s/^define( 'WP_FORGE_MCP_VERSION', '\([^']*\)' );$/\1/p" wp-plugin-mcp.php)"
+
+          if [ "$plugin_header_version" != "$RELEASE_TAG" ]; then
+            echo "Plugin header version ${plugin_header_version} does not match release tag ${RELEASE_TAG}."
+            exit 1
+          fi
+
+          if [ "$plugin_constant_version" != "$RELEASE_TAG" ]; then
+            echo "WP_FORGE_MCP_VERSION ${plugin_constant_version} does not match release tag ${RELEASE_TAG}."
+            exit 1
+          fi
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install production dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare files
+        env:
+          DIST: ${{ steps.workflow.outputs.DIST }}
+          PACKAGE: ${{ steps.workflow.outputs.PACKAGE }}
+        run: |
+          mkdir -p "$DIST/$PACKAGE"
+          rsync -r --delete --exclude-from=.distignore ./ "$DIST/$PACKAGE/"
+
+      - name: Build zip
+        env:
+          DIST: ${{ steps.workflow.outputs.DIST }}
+          PACKAGE: ${{ steps.workflow.outputs.PACKAGE }}
+        run: |
+          cd "$DIST"
+          zip -r "${PACKAGE}.zip" "$PACKAGE"
+
+      - name: Upload release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIST: ${{ steps.workflow.outputs.DIST }}
+          PACKAGE: ${{ steps.workflow.outputs.PACKAGE }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: gh release upload "$RELEASE_TAG" "$DIST/${PACKAGE}.zip" --clobber
