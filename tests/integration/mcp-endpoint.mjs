@@ -214,8 +214,6 @@ const expectedTools = [
   'wp-forge-get-comment',
   'wp-forge-save-comment',
   'wp-forge-delete-comment',
-  'wp-forge-approve-comment',
-  'wp-forge-spam-comment',
   'wp-forge-get-site-health-info',
   'wp-forge-list-site-health-tests',
   'wp-forge-read-error-log',
@@ -397,8 +395,12 @@ await expectSuccess('wp-forge-list-comments', { post_id: postId, per_page: 5 });
 const comment = await expectSuccess('wp-forge-get-comment', { id: commentId });
 assert(comment.id === commentId, 'wp-forge-get-comment returned the wrong comment');
 await expectSuccess('wp-forge-save-comment', { id: commentId, content: `MCP comment updated ${suffix}` });
-await expectSuccess('wp-forge-approve-comment', { id: commentId });
-await expectSuccess('wp-forge-spam-comment', { id: commentId });
+await expectSuccess('wp-forge-save-comment', { id: commentId, status: 'approved' });
+const approvedComment = await expectSuccess('wp-forge-get-comment', { id: commentId });
+assert(approvedComment.status === 'approved', 'wp-forge-save-comment did not approve the comment');
+await expectSuccess('wp-forge-save-comment', { id: commentId, status: 'spam' });
+const spamComment = await expectSuccess('wp-forge-get-comment', { id: commentId });
+assert(spamComment.status === 'spam', 'wp-forge-save-comment did not mark the comment as spam');
 await expectSuccess('wp-forge-delete-comment', { id: commentId });
 
 const siteHealthInfo = await expectSuccess('wp-forge-get-site-health-info');

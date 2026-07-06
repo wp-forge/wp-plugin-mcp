@@ -48,7 +48,7 @@ trait CommentManagementTools {
 				'content' => $this->string_prop( 'Comment content.' ),
 				'author_name' => $this->string_prop( 'Author name.' ),
 				'author_email' => $this->string_prop( 'Author email.' ),
-				'status' => $this->string_prop( 'Comment status.', 'hold' ),
+				'status' => $this->string_prop( 'Comment status: approve, approved, hold, unapproved, spam, or trash.', 'hold' ),
 			)
 		), function ( $params ) {
 			return $this->save_comment_tool( $params );
@@ -56,14 +56,6 @@ trait CommentManagementTools {
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'delete-comment', 'Delete Comment', 'Delete a WordPress comment by ID', $id_schema, function ( $params ) {
 			return $this->delete_comment_tool( (int) $params['id'] );
-		}, false, 'moderate_comments' );
-
-		$this->add_ability( self::INTERNAL_PREFIX . 'approve-comment', 'Approve Comment', 'Approve a WordPress comment by ID', $id_schema, function ( $params ) {
-			return $this->set_comment_status_tool( (int) $params['id'], 'approve' );
-		}, false, 'moderate_comments' );
-
-		$this->add_ability( self::INTERNAL_PREFIX . 'spam-comment', 'Spam Comment', 'Mark a WordPress comment as spam by ID', $id_schema, function ( $params ) {
-			return $this->set_comment_status_tool( (int) $params['id'], 'spam' );
 		}, false, 'moderate_comments' );
 	}
 
@@ -138,12 +130,17 @@ trait CommentManagementTools {
 			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
+		$status = isset( $params['status'] ) ? $this->normalize_comment_status( $params['status'], 'insert' ) : '0';
+		if ( is_array( $status ) ) {
+			return $status;
+		}
+
 		return Response::unwrap_wp_error( wp_insert_comment( array(
 			'comment_post_ID'      => (int) $params['post_id'],
 			'comment_content'      => $params['content'],
 			'comment_author'       => isset( $params['author_name'] ) ? $params['author_name'] : '',
 			'comment_author_email' => isset( $params['author_email'] ) ? $params['author_email'] : '',
-			'comment_approved'     => isset( $params['status'] ) ? $params['status'] : 'hold',
+			'comment_approved'     => $status,
 		) ) );
 	}
 
@@ -162,11 +159,29 @@ trait CommentManagementTools {
 		if ( isset( $params['content'] ) ) {
 			$data['comment_content'] = $params['content'];
 		}
-		if ( isset( $params['status'] ) ) {
-			$data['comment_approved'] = $params['status'];
+
+		$result = true;
+		if ( count( $data ) > 1 ) {
+			$result = Response::unwrap_wp_error( wp_update_comment( $data, true ) );
+			if ( is_array( $result ) && isset( $result['status'] ) && 'error' === $result['status'] ) {
+				return $result;
+			}
 		}
 
-		return Response::unwrap_wp_error( wp_update_comment( $data, true ) );
+		if ( isset( $params['status'] ) ) {
+			if ( ! function_exists( 'wp_set_comment_status' ) ) {
+				return Response::error( 'This ability requires a WordPress runtime.', 500 );
+			}
+
+			$status = $this->normalize_comment_status( $params['status'], 'update' );
+			if ( is_array( $status ) ) {
+				return $status;
+			}
+
+			return Response::unwrap_wp_error( wp_set_comment_status( (int) $params['id'], $status, true ) );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -187,21 +202,6 @@ trait CommentManagementTools {
 	}
 
 	/**
-	 * Set comment status.
-	 *
-	 * @param int    $id Comment ID.
-	 * @param string $status Status.
-	 * @return mixed
-	 */
-	private function set_comment_status_tool( $id, $status ) {
-		if ( ! function_exists( 'wp_set_comment_status' ) ) {
-			return Response::error( 'This ability requires a WordPress runtime.', 500 );
-		}
-
-		return Response::unwrap_wp_error( wp_set_comment_status( $id, $status, true ) );
-	}
-
-	/**
 	 * Format comment.
 	 *
 	 * @param mixed $comment Comment.
@@ -217,5 +217,60 @@ trait CommentManagementTools {
 			'status'       => wp_get_comment_status( $comment ),
 			'date'         => $comment->comment_date,
 		);
+	}
+
+	/**
+	 * Normalize user-facing comment statuses for WordPress comment APIs.
+	 *
+	 * @param mixed  $status Status value.
+	 * @param string $context API context: insert or update.
+	 * @return string|array<string,mixed>
+	 */
+	private function normalize_comment_status( $status, $context ) {
+		$status = strtolower( trim( (string) $status ) );
+		$map    = array(
+			'1'          => array(
+				'insert' => '1',
+				'update' => 'approve',
+			),
+			'approve'    => array(
+				'insert' => '1',
+				'update' => 'approve',
+			),
+			'approved'   => array(
+				'insert' => '1',
+				'update' => 'approve',
+			),
+			'0'          => array(
+				'insert' => '0',
+				'update' => 'hold',
+			),
+			'hold'       => array(
+				'insert' => '0',
+				'update' => 'hold',
+			),
+			'pending'    => array(
+				'insert' => '0',
+				'update' => 'hold',
+			),
+			'unapproved' => array(
+				'insert' => '0',
+				'update' => 'hold',
+			),
+			'spam'       => array(
+				'insert' => 'spam',
+				'update' => 'spam',
+			),
+			'trash'      => array(
+				'insert' => 'trash',
+				'update' => 'trash',
+			),
+		);
+
+		if ( ! isset( $map[ $status ][ $context ] ) ) {
+			return Response::error( 'Unsupported comment status: ' . $status, 400 );
+		}
+
+		return $map[ $status ][ $context ];
 	}
 }
