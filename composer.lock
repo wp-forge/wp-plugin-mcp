@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6d2af1fcc644d16a900e562e0aeb9ecf",
+    "content-hash": "8f963c71411a12b9a19a0c0cffe7cdac",
     "packages": [
         {
             "name": "wordpress/mcp-adapter",
@@ -141,5 +141,8 @@
         "php": ">=8.2"
     },
     "platform-dev": {},
+    "platform-overrides": {
+        "php": "8.2.0"
+    },
     "plugin-api-version": "2.9.0"
 }
