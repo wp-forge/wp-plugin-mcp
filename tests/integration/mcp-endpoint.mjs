@@ -299,7 +299,13 @@ const cptId = await expectSuccess('wp-forge-add-cpt', {
   content: 'Created through the CPT tool against the built-in post type.',
   status: 'draft',
 });
-await expectSuccess('wp-forge-list-post-types');
+const postTypes = await expectSuccess('wp-forge-list-post-types', { public: true });
+assert(Array.isArray(postTypes.post_types), 'wp-forge-list-post-types did not return a post_types array');
+const postType = postTypes.post_types.find((item) => item.slug === 'post');
+assert(postType, 'wp-forge-list-post-types did not include posts');
+assert(postType.hierarchical === false, 'wp-forge-list-post-types did not expose hierarchical status');
+assert(Array.isArray(postType.supports) && postType.supports.includes('title'), 'wp-forge-list-post-types did not expose supported features');
+assert(Array.isArray(postType.taxonomies) && postType.taxonomies.includes('category'), 'wp-forge-list-post-types did not expose supported taxonomies');
 await expectSuccess('wp-forge-cpt-search', { post_type: 'post', status: 'draft', search: 'MCP integration cpt', per_page: 5 });
 const cpt = await expectSuccess('wp-forge-get-cpt', { post_type: 'post', id: cptId });
 assert(cpt.id === cptId, 'wp-forge-get-cpt returned the wrong item');

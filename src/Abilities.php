@@ -386,6 +386,26 @@ class Abilities {
 	}
 
 	/**
+	 * Boolean schema property.
+	 *
+	 * @param string    $description Description.
+	 * @param bool|null $default Default value.
+	 * @return array<string,mixed>
+	 */
+	private function bool_prop( $description, $default = null ) {
+		$prop = array(
+			'type'        => 'boolean',
+			'description' => $description,
+		);
+
+		if ( null !== $default ) {
+			$prop['default'] = $default;
+		}
+
+		return $prop;
+	}
+
+	/**
 	 * Normalize a name prefix to MCP tool hyphen form.
 	 *
 	 * @param string $name Name.
@@ -551,25 +571,80 @@ class Abilities {
 	/**
 	 * List post types.
 	 *
-	 * @return array<string,mixed>|array<int,array<string,mixed>>
+	 * @param array<string,mixed> $params Params.
+	 * @return array<string,mixed>
 	 */
-	private function list_post_types() {
+	private function list_post_types( $params = array() ) {
 		if ( ! function_exists( 'get_post_types' ) ) {
 			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
-		$types = get_post_types( array(), 'objects' );
+		$args = array();
+		foreach ( array( 'public', 'hierarchical', 'show_in_rest', 'show_ui', 'show_in_menu', 'show_in_nav_menus', 'exclude_from_search', 'publicly_queryable', '_builtin' ) as $filter ) {
+			if ( array_key_exists( $filter, $params ) ) {
+				$args[ $filter ] = (bool) $params[ $filter ];
+			}
+		}
+
+		$types = get_post_types( $args, 'objects' );
 		$out   = array();
 		foreach ( $types as $type ) {
 			$out[] = array(
-				'name'        => $type->name,
-				'label'       => $type->label,
-				'description' => $type->description,
-				'public'      => (bool) $type->public,
-				'rest_base'   => $type->rest_base,
+				'slug'         => $type->name,
+				'label'        => $type->label,
+				'hierarchical' => (bool) $type->hierarchical,
+				'public'       => (bool) $type->public,
+				'supports'     => $this->get_post_type_supports( $type->name, $type ),
+				'taxonomies'   => $this->get_post_type_taxonomies( $type->name, $type ),
+				'rest_base'    => isset( $type->rest_base ) ? $type->rest_base : '',
 			);
 		}
-		return $out;
+
+		return array( 'post_types' => $out );
+	}
+
+	/**
+	 * Get supported features for a post type.
+	 *
+	 * @param string $post_type Post type slug.
+	 * @param mixed  $type Post type object.
+	 * @return array<int,string>
+	 */
+	private function get_post_type_supports( $post_type, $type ) {
+		if ( function_exists( 'get_all_post_type_supports' ) ) {
+			$supports = get_all_post_type_supports( $post_type );
+			return is_array( $supports ) ? array_keys( $supports ) : array();
+		}
+
+		if ( isset( $type->supports ) && is_array( $type->supports ) ) {
+			if ( array() === $type->supports ) {
+				return array();
+			}
+
+			$is_list = array_keys( $type->supports ) === range( 0, count( $type->supports ) - 1 );
+			return array_values( $is_list ? $type->supports : array_keys( $type->supports ) );
+		}
+
+		return array();
+	}
+
+	/**
+	 * Get taxonomies registered for a post type.
+	 *
+	 * @param string $post_type Post type slug.
+	 * @param mixed  $type Post type object.
+	 * @return array<int,string>
+	 */
+	private function get_post_type_taxonomies( $post_type, $type ) {
+		if ( function_exists( 'get_object_taxonomies' ) ) {
+			return array_values( get_object_taxonomies( $post_type, 'names' ) );
+		}
+
+		if ( isset( $type->taxonomies ) && is_array( $type->taxonomies ) ) {
+			return array_values( $type->taxonomies );
+		}
+
+		return array();
 	}
 
 	/**

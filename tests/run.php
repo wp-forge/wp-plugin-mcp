@@ -22,6 +22,59 @@ use WP_Forge\Plugin;
 $registered_abilities = array();
 $added_actions        = array();
 $added_filters        = array();
+$test_post_types      = array(
+	'post'          => array(
+		'name'                => 'post',
+		'label'               => 'Posts',
+		'description'         => 'Posts.',
+		'public'              => true,
+		'hierarchical'        => false,
+		'show_in_rest'        => true,
+		'show_ui'             => true,
+		'show_in_menu'        => true,
+		'show_in_nav_menus'   => true,
+		'exclude_from_search' => false,
+		'publicly_queryable'  => true,
+		'_builtin'            => true,
+		'rest_base'           => 'posts',
+		'supports'            => array( 'title' => true, 'editor' => true, 'author' => true, 'thumbnail' => true, 'excerpt' => true, 'comments' => true ),
+		'taxonomies'          => array( 'category', 'post_tag' ),
+	),
+	'page'          => array(
+		'name'                => 'page',
+		'label'               => 'Pages',
+		'description'         => 'Pages.',
+		'public'              => true,
+		'hierarchical'        => true,
+		'show_in_rest'        => true,
+		'show_ui'             => true,
+		'show_in_menu'        => true,
+		'show_in_nav_menus'   => true,
+		'exclude_from_search' => false,
+		'publicly_queryable'  => true,
+		'_builtin'            => true,
+		'rest_base'           => 'pages',
+		'supports'            => array( 'title' => true, 'editor' => true, 'author' => true, 'thumbnail' => true, 'page-attributes' => true ),
+		'taxonomies'          => array(),
+	),
+	'nav_menu_item' => array(
+		'name'                => 'nav_menu_item',
+		'label'               => 'Navigation Menu Items',
+		'description'         => 'Navigation menu items.',
+		'public'              => false,
+		'hierarchical'        => false,
+		'show_in_rest'        => false,
+		'show_ui'             => false,
+		'show_in_menu'        => false,
+		'show_in_nav_menus'   => false,
+		'exclude_from_search' => true,
+		'publicly_queryable'  => false,
+		'_builtin'            => true,
+		'rest_base'           => '',
+		'supports'            => array(),
+		'taxonomies'          => array(),
+	),
+);
 
 if ( ! function_exists( 'wp_register_ability' ) ) {
 	function wp_register_ability( $name, $args ) {
@@ -53,6 +106,39 @@ if ( ! function_exists( 'add_filter' ) ) {
 	function add_filter( $hook_name, $callback ) {
 		global $added_filters;
 		$added_filters[ $hook_name ] = $callback;
+	}
+}
+
+if ( ! function_exists( 'get_post_types' ) ) {
+	function get_post_types( $args = array(), $output = 'names' ) {
+		global $test_post_types;
+		$matches = array();
+
+		foreach ( $test_post_types as $slug => $post_type ) {
+			foreach ( $args as $key => $value ) {
+				if ( ! array_key_exists( $key, $post_type ) || $post_type[ $key ] !== $value ) {
+					continue 2;
+				}
+			}
+
+			$matches[ $slug ] = (object) $post_type;
+		}
+
+		return 'objects' === $output ? $matches : array_keys( $matches );
+	}
+}
+
+if ( ! function_exists( 'get_all_post_type_supports' ) ) {
+	function get_all_post_type_supports( $post_type ) {
+		global $test_post_types;
+		return isset( $test_post_types[ $post_type ] ) ? $test_post_types[ $post_type ]['supports'] : array();
+	}
+}
+
+if ( ! function_exists( 'get_object_taxonomies' ) ) {
+	function get_object_taxonomies( $post_type, $output = 'names' ) {
+		global $test_post_types;
+		return isset( $test_post_types[ $post_type ] ) ? $test_post_types[ $post_type ]['taxonomies'] : array();
 	}
 }
 
@@ -176,6 +262,9 @@ $schema = $abilities->get_schema( 'wp-forge-add-post' );
 assert_same( 'wp-forge-add-post', $schema['name'], 'Schema lookup should accept MCP tool names.' );
 assert_same( false, $schema['annotations']['readOnlyHint'], 'Add post should be marked writable.' );
 
+$post_types_schema = $abilities->get_schema( 'wp-forge-list-post-types' );
+assert_same( 'boolean', $post_types_schema['input_schema']['properties']['public']['type'], 'Post type list should expose public filtering.' );
+
 $direct_tools = $abilities->list_tools();
 $direct_tool_names = array_column( $direct_tools, 'name' );
 assert_same( 69, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
@@ -206,6 +295,18 @@ assert_same( 403, $disabled_wp_cli['statusCode'], 'Disabled WP-CLI tool should r
 $missing_runtime = $abilities->call( 'wp-forge-posts-search', array() );
 assert_same( 'error', $missing_runtime['status'], 'WordPress-dependent ability should report missing runtime in unit tests.' );
 assert_same( 500, $missing_runtime['statusCode'], 'Missing WordPress runtime should be a server-side ability error.' );
+
+$post_types = $abilities->call( 'wp-forge-list-post-types', array() );
+assert_same( 'success', $post_types['status'], 'Post type list should use the available WordPress runtime.' );
+assert_same( array( 'post_types' ), array_keys( $post_types['message'] ), 'Post type list should return a structured envelope.' );
+assert_same( 'post', $post_types['message']['post_types'][0]['slug'], 'Post type list should expose slugs.' );
+assert_same( false, $post_types['message']['post_types'][0]['hierarchical'], 'Post type list should expose hierarchical status.' );
+assert_same( array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments' ), $post_types['message']['post_types'][0]['supports'], 'Post type list should expose supported features.' );
+assert_same( array( 'category', 'post_tag' ), $post_types['message']['post_types'][0]['taxonomies'], 'Post type list should expose supported taxonomies.' );
+assert_same( 'posts', $post_types['message']['post_types'][0]['rest_base'], 'Post type list should expose REST base.' );
+
+$public_hierarchical_post_types = $abilities->call( 'wp-forge-list-post-types', array( 'public' => true, 'hierarchical' => true ) );
+assert_same( array( 'page' ), array_column( $public_hierarchical_post_types['message']['post_types'], 'slug' ), 'Post type list should pass filters through to get_post_types().' );
 
 $wp_ability_names = $abilities->get_wordpress_ability_names();
 assert_same( 69, count( $wp_ability_names ), 'Expected all abilities to be available for the MCP adapter.' );

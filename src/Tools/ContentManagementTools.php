@@ -81,8 +81,22 @@ trait ContentManagementTools {
 		$cpt_update_schema['properties']['id'] = $this->int_prop( 'Item ID.' );
 		$cpt_update_schema['required'] = array( 'post_type', 'id' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-post-types', 'List Post Types', 'List all registered WordPress post types (built-in and custom)', $this->schema(), function () {
-			return $this->list_post_types();
+		$list_post_types_schema = $this->schema(
+			array(
+				'public'              => $this->bool_prop( 'Filter by public post types.' ),
+				'hierarchical'        => $this->bool_prop( 'Filter by hierarchical support.' ),
+				'show_in_rest'        => $this->bool_prop( 'Filter by REST API exposure.' ),
+				'show_ui'             => $this->bool_prop( 'Filter by admin UI visibility.' ),
+				'show_in_menu'        => $this->bool_prop( 'Filter by admin menu visibility.' ),
+				'show_in_nav_menus'   => $this->bool_prop( 'Filter by nav menu visibility.' ),
+				'exclude_from_search' => $this->bool_prop( 'Filter by search exclusion.' ),
+				'publicly_queryable'  => $this->bool_prop( 'Filter by public queryability.' ),
+				'_builtin'            => $this->bool_prop( 'Filter by built-in status.' ),
+			)
+		);
+
+		$this->add_ability( self::INTERNAL_PREFIX . 'list-post-types', 'List Post Types', 'List registered WordPress post types with runtime validation metadata', $list_post_types_schema, function ( $params ) {
+			return $this->list_post_types( $params );
 		} );
 		$this->add_ability( self::INTERNAL_PREFIX . 'cpt-search', 'Search Custom Post Type', 'Search and filter content items within a custom post type with pagination', $cpt_schema, function ( $params ) {
 			return $this->query_posts( $params['post_type'], $params );
