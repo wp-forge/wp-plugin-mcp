@@ -218,7 +218,6 @@ const expectedTools = [
   'wp-forge-spam-comment',
   'wp-forge-get-site-health-info',
   'wp-forge-list-site-health-tests',
-  'wp-forge-get-error-log-path',
   'wp-forge-read-error-log',
   'wp-forge-run-wp-cli-command',
   'wp-forge-get-global-styles',
@@ -405,7 +404,6 @@ await expectSuccess('wp-forge-delete-comment', { id: commentId });
 const siteHealthInfo = await expectSuccess('wp-forge-get-site-health-info');
 assert(siteHealthInfo['wp-core'], 'wp-forge-get-site-health-info did not include wp-core debug data');
 await expectSuccess('wp-forge-list-site-health-tests');
-await expectSuccess('wp-forge-get-error-log-path');
 await expectSuccess('wp-forge-read-error-log', { lines: 5 });
 await expectError('wp-forge-run-wp-cli-command', { args: ['plugin', 'list'] }, 403);
 
