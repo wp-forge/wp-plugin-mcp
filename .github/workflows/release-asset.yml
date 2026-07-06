@@ -1,15 +1,9 @@
 name: Upload Release Asset
 
 on:
-  push:
-    tags:
-      - '*.*.*'
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag to upload the asset to.'
-        required: true
-        type: string
+  release:
+    types:
+      - published
 
 permissions:
   contents: write
@@ -21,14 +15,8 @@ jobs:
     steps:
       - name: Resolve release tag
         id: release
-        env:
-          INPUT_TAG: ${{ inputs.tag }}
         run: |
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            tag="${INPUT_TAG}"
-          else
-            tag="${GITHUB_REF_NAME}"
-          fi
+          tag="${{ github.event.release.tag_name }}"
 
           if ! printf '%s' "$tag" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "Release asset uploads only run for numeric semver tags like 1.0.0 or 2.40.4."
@@ -81,9 +69,4 @@ jobs:
           DIST: ${{ steps.workflow.outputs.DIST }}
           PACKAGE: ${{ steps.workflow.outputs.PACKAGE }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
-        run: |
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "$DIST/${PACKAGE}.zip" --clobber
-          else
-            gh release create "$RELEASE_TAG" "$DIST/${PACKAGE}.zip" --title "$RELEASE_TAG" --generate-notes
-          fi
+        run: gh release upload "$RELEASE_TAG" "$DIST/${PACKAGE}.zip" --clobber
