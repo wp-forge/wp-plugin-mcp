@@ -1328,6 +1328,26 @@ class Abilities {
 	}
 
 	/**
+	 * Save a user.
+	 *
+	 * @param array<string,mixed> $params Params.
+	 * @return mixed
+	 */
+	private function save_user( $params ) {
+		if ( isset( $params['id'] ) ) {
+			return $this->update_user( (int) $params['id'], $params );
+		}
+
+		foreach ( array( 'username', 'email', 'password' ) as $required ) {
+			if ( ! isset( $params[ $required ] ) || '' === (string) $params[ $required ] ) {
+				return Response::error( 'save-user requires ' . $required . ' when creating a user.', 400 );
+			}
+		}
+
+		return $this->insert_user( $params );
+	}
+
+	/**
 	 * Insert user.
 	 *
 	 * @param array<string,mixed> $params Params.

@@ -41,28 +41,17 @@ trait CommentManagementTools {
 			return $this->get_comment_tool( (int) $params['id'] );
 		}, true, 'moderate_comments' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'add-comment', 'Add Comment', 'Add a comment to a WordPress post', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'save-comment', 'Save Comment', 'Create or update a WordPress comment', $this->schema(
 			array(
-				'post_id' => $this->int_prop( 'Post ID.' ),
+				'id' => $this->int_prop( 'Comment ID. Omit to create a new comment.' ),
+				'post_id' => $this->int_prop( 'Post ID. Required when creating a comment.' ),
 				'content' => $this->string_prop( 'Comment content.' ),
 				'author_name' => $this->string_prop( 'Author name.' ),
 				'author_email' => $this->string_prop( 'Author email.' ),
 				'status' => $this->string_prop( 'Comment status.', 'hold' ),
-			),
-			array( 'post_id', 'content' )
+			)
 		), function ( $params ) {
-			return $this->add_comment_tool( $params );
-		}, false, 'edit_posts' );
-
-		$this->add_ability( self::INTERNAL_PREFIX . 'update-comment', 'Update Comment', 'Update a WordPress comment by ID', $this->schema(
-			array(
-				'id'      => $this->int_prop( 'Comment ID.' ),
-				'content' => $this->string_prop( 'Comment content.' ),
-				'status'  => $this->string_prop( 'Comment status.' ),
-			),
-			array( 'id' )
-		), function ( $params ) {
-			return $this->update_comment_tool( $params );
+			return $this->save_comment_tool( $params );
 		}, false, 'moderate_comments' );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'delete-comment', 'Delete Comment', 'Delete a WordPress comment by ID', $id_schema, function ( $params ) {
@@ -116,6 +105,26 @@ trait CommentManagementTools {
 
 		$comment = get_comment( $id );
 		return $comment ? $this->format_comment( $comment ) : Response::error( 'Comment not found.', 404 );
+	}
+
+	/**
+	 * Save a comment.
+	 *
+	 * @param array<string,mixed> $params Params.
+	 * @return mixed
+	 */
+	private function save_comment_tool( $params ) {
+		if ( isset( $params['id'] ) ) {
+			return $this->update_comment_tool( $params );
+		}
+
+		foreach ( array( 'post_id', 'content' ) as $required ) {
+			if ( ! isset( $params[ $required ] ) || '' === (string) $params[ $required ] ) {
+				return Response::error( 'save-comment requires ' . $required . ' when creating a comment.', 400 );
+			}
+		}
+
+		return $this->add_comment_tool( $params );
 	}
 
 	/**

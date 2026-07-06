@@ -35,27 +35,21 @@ trait SiteManagementTools {
 		$user_get_schema = $this->schema( array( 'id' => $this->int_prop( 'User ID.' ) ), array( 'id' ) );
 		$user_write_schema = $this->schema(
 			array(
+				'id'         => $this->int_prop( 'User ID. Omit to create a new user.' ),
 				'username'   => $this->string_prop( 'Username.' ),
-				'email'      => $this->string_prop( 'Email address.' ),
-				'password'   => $this->string_prop( 'Password.' ),
+				'email'      => $this->string_prop( 'Email address. Required when creating a user.' ),
+				'password'   => $this->string_prop( 'Password. Required when creating a user.' ),
 				'first_name' => $this->string_prop( 'First name.' ),
 				'last_name'  => $this->string_prop( 'Last name.' ),
 				'role'       => $this->string_prop( 'Role.' ),
-			),
-			array( 'username', 'email', 'password' )
+			)
 		);
-		$user_update_schema = $user_write_schema;
-		$user_update_schema['properties']['id'] = $this->int_prop( 'User ID.' );
-		$user_update_schema['required'] = array( 'id' );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'get-user', 'Get User', 'Get a WordPress user by ID', $user_get_schema, function ( $params ) {
 			return $this->get_user( (int) $params['id'] );
 		}, true, 'list_users' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'add-user', 'Add User', 'Add a new WordPress user', $user_write_schema, function ( $params ) {
-			return $this->insert_user( $params );
-		}, false, 'create_users' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'update-user', 'Update User', 'Update a WordPress user by ID', $user_update_schema, function ( $params ) {
-			return $this->update_user( (int) $params['id'], $params );
+		$this->add_ability( self::INTERNAL_PREFIX . 'save-user', 'Save User', 'Create or update a WordPress user', $user_write_schema, function ( $params ) {
+			return $this->save_user( $params );
 		}, false, 'edit_users' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'delete-user', 'Delete User', 'Delete a WordPress user by ID', $user_get_schema, function ( $params ) {
 			return $this->delete_user( (int) $params['id'] );
@@ -76,7 +70,7 @@ trait SiteManagementTools {
 		$this->add_ability( self::INTERNAL_PREFIX . 'get-general-settings', 'Get General Settings', 'Get WordPress general site settings', $this->schema(), function () {
 			return $this->get_general_settings();
 		}, true, 'manage_options' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'update-general-settings', 'Update General Settings', 'Update WordPress general site settings', $settings_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'save-general-settings', 'Save General Settings', 'Save WordPress general site settings', $settings_schema, function ( $params ) {
 			return $this->update_general_settings( $params );
 		}, false, 'manage_options' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'get-site-info', 'Get Site Info', 'Get detailed site information', $this->schema(), function () {

@@ -44,7 +44,7 @@ trait OptionManagementTools {
 			return $this->get_option_tool( $params['option_name'] );
 		}, true, 'manage_options' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'update-option', 'Update Option', 'Update a WordPress option value by name', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'save-option', 'Save Option', 'Create or update a WordPress option value by name', $this->schema(
 			array(
 				'option_name' => $this->string_prop( 'Option name.' ),
 				'value'       => array( 'description' => 'Option value.', 'type' => array( 'string', 'number', 'integer', 'boolean', 'array', 'object', 'null' ) ),
