@@ -38,6 +38,23 @@ jobs:
         with:
           ref: ${{ steps.release.outputs.tag }}
 
+      - name: Validate plugin version
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          plugin_header_version="$(awk -F ': ' '/^[[:space:]]*\* Version:/ { print $2; exit }' wp-plugin-mcp.php)"
+          plugin_constant_version="$(sed -n "s/^define( 'WP_FORGE_MCP_VERSION', '\([^']*\)' );$/\1/p" wp-plugin-mcp.php)"
+
+          if [ "$plugin_header_version" != "$RELEASE_TAG" ]; then
+            echo "Plugin header version ${plugin_header_version} does not match release tag ${RELEASE_TAG}."
+            exit 1
+          fi
+
+          if [ "$plugin_constant_version" != "$RELEASE_TAG" ]; then
+            echo "WP_FORGE_MCP_VERSION ${plugin_constant_version} does not match release tag ${RELEASE_TAG}."
+            exit 1
+          fi
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
