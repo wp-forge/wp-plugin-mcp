@@ -130,14 +130,14 @@ WP-CLI execution is disabled by default. To enable it, define `WP_FORGE_MCP_ENAB
 | --- | --- |
 | `wp-forge-global_styles_get` | Get a global styles configuration by ID |
 | `wp-forge-global_styles_update` | Update a global styles configuration |
-| `wp-forge-active_global_styles_get` | Get the currently active global styles for the current theme |
-| `wp-forge-active_global_styles_id_get` | Get the active global styles ID |
+| `wp-forge-global_styles_active_get` | Get the currently active global styles for the current theme |
+| `wp-forge-global_styles_active_id_get` | Get the active global styles ID |
 
 ### Themes
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-active_theme_get` | Get the active theme information |
+| `wp-forge-theme_active_get` | Get the active theme information |
 | `wp-forge-theme_list` | List installed WordPress themes and their activation state |
 | `wp-forge-theme_install` | Install a WordPress theme from the WordPress.org theme directory by slug |
 | `wp-forge-theme_activate` | Activate an installed WordPress theme by stylesheet directory name |
@@ -148,7 +148,7 @@ WP-CLI execution is disabled by default. To enable it, define `WP_FORGE_MCP_ENAB
 | Tool | Description |
 | --- | --- |
 | `wp-forge-api_function_list` | List available WordPress REST API endpoints that support CRUD |
-| `wp-forge-function_details_get` | Get detailed metadata for a specific REST API route and HTTP method |
+| `wp-forge-api_function_details_get` | Get detailed metadata for a specific REST API route and HTTP method |
 | `wp-forge-api_function_run` | Execute a REST API request by route, method, and parameters |
 
 ## Copy-Paste MCP Configuration

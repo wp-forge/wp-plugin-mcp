@@ -37,10 +37,10 @@ trait GlobalStylesTools {
 		$this->add_ability( self::INTERNAL_PREFIX . 'global_styles_update', 'Update Global Styles', 'Update a global styles configuration', $update_schema, function ( $params ) {
 			return $this->update_global_styles( (int) $params['id'], $params );
 		}, false, 'edit_theme_options' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'active_global_styles_get', 'Get Active Global Styles', 'Get the currently active global styles for the current theme', $this->schema(), function () {
+		$this->add_ability( self::INTERNAL_PREFIX . 'global_styles_active_get', 'Get Active Global Styles', 'Get the currently active global styles for the current theme', $this->schema(), function () {
 			return $this->get_active_global_styles();
 		}, true, 'edit_theme_options' );
-		$this->add_ability( self::INTERNAL_PREFIX . 'active_global_styles_id_get', 'Get Active Global Styles ID', 'Get the active global styles ID', $this->schema(), function () {
+		$this->add_ability( self::INTERNAL_PREFIX . 'global_styles_active_id_get', 'Get Active Global Styles ID', 'Get the active global styles ID', $this->schema(), function () {
 			return array( 'id' => $this->get_active_global_styles_id() );
 		}, true, 'edit_theme_options' );
 	}

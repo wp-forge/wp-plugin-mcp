@@ -34,7 +34,7 @@ trait RestCatalogTools {
 		), function ( $params ) {
 			return $this->list_api_functions( $params );
 		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'function_details_get', 'Get Function Details', 'Get detailed metadata for a specific REST API route and HTTP method', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'api_function_details_get', 'Get Function Details', 'Get detailed metadata for a specific REST API route and HTTP method', $this->schema(
 			array(
 				'route'  => $this->string_prop( 'REST route.' ),
 				'method' => $this->string_prop( 'HTTP method.' ),

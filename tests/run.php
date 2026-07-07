@@ -354,9 +354,9 @@ $expected_named_tools = array(
 	'wp-forge-wp_cli_command_run',
 	'wp-forge-global_styles_get',
 	'wp-forge-global_styles_update',
-	'wp-forge-active_global_styles_get',
-	'wp-forge-active_global_styles_id_get',
-	'wp-forge-active_theme_get',
+	'wp-forge-global_styles_active_get',
+	'wp-forge-global_styles_active_id_get',
+	'wp-forge-theme_active_get',
 );
 
 foreach ( $expected_named_tools as $expected_name ) {
@@ -421,7 +421,7 @@ $direct_tools = $abilities->list_tools();
 $direct_tool_names = array_column( $direct_tools, 'name' );
 assert_same( 52, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
 assert_true( in_array( 'wp-forge-content_search', $direct_tool_names, true ), 'Direct tool list should include content search.' );
-assert_true( in_array( 'wp-forge-active_theme_get', $direct_tool_names, true ), 'Direct tool list should include active theme.' );
+assert_true( in_array( 'wp-forge-theme_active_get', $direct_tool_names, true ), 'Direct tool list should include active theme.' );
 assert_true( ! in_array( 'wp-forge-list-abilities', $direct_tool_names, true ), 'Gateway list tool should not be exposed.' );
 assert_true( ! in_array( 'wp-forge-get-ability-schema', $direct_tool_names, true ), 'Gateway schema tool should not be exposed.' );
 assert_true( ! in_array( 'wp-forge-call-ability', $direct_tool_names, true ), 'Gateway call tool should not be exposed.' );

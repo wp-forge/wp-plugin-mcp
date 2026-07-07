@@ -219,11 +219,11 @@ const expectedTools = [
   'wp-forge-wp_cli_command_run',
   'wp-forge-global_styles_get',
   'wp-forge-global_styles_update',
-  'wp-forge-active_global_styles_get',
-  'wp-forge-active_global_styles_id_get',
-  'wp-forge-active_theme_get',
+  'wp-forge-global_styles_active_get',
+  'wp-forge-global_styles_active_id_get',
+  'wp-forge-theme_active_get',
   'wp-forge-api_function_list',
-  'wp-forge-function_details_get',
+  'wp-forge-api_function_details_get',
   'wp-forge-api_function_run',
 ];
 
@@ -357,7 +357,7 @@ await expectSuccess('wp-forge-user_delete', { id: userId });
 await expectSuccess('wp-forge-general_settings_get');
 await expectSuccess('wp-forge-general_settings_save', {});
 await expectSuccess('wp-forge-site_info_get');
-await expectSuccess('wp-forge-active_theme_get');
+await expectSuccess('wp-forge-theme_active_get');
 
 const plugins = await expectSuccess('wp-forge-plugin_list');
 assert(
@@ -408,18 +408,18 @@ await expectSuccess('wp-forge-site_health_test_list');
 await expectSuccess('wp-forge-error_log_read', { lines: 5 });
 await expectError('wp-forge-wp_cli_command_run', { args: ['plugin', 'list'] }, 403);
 
-const activeGlobalStylesId = await expectSuccess('wp-forge-active_global_styles_id_get');
+const activeGlobalStylesId = await expectSuccess('wp-forge-global_styles_active_id_get');
 if (activeGlobalStylesId.id) {
-  await expectSuccess('wp-forge-active_global_styles_get');
+  await expectSuccess('wp-forge-global_styles_active_get');
   await expectSuccess('wp-forge-global_styles_get', { id: activeGlobalStylesId.id });
 } else {
-  await expectError('wp-forge-active_global_styles_get', {});
+  await expectError('wp-forge-global_styles_active_get', {});
   await expectError('wp-forge-global_styles_get', { id: 99999999 }, 404);
 }
 await expectError('wp-forge-global_styles_update', { id: 99999999, settings: {}, styles: {} }, 404);
 
 await expectSuccess('wp-forge-api_function_list', { namespace: 'wp/v2', methods: ['GET'], search: '/types' });
-await expectSuccess('wp-forge-function_details_get', { route: '/wp/v2/types', method: 'GET' });
+await expectSuccess('wp-forge-api_function_details_get', { route: '/wp/v2/types', method: 'GET' });
 await expectSuccess('wp-forge-api_function_run', { route: '/wp/v2/types', method: 'GET' });
 
 if (!username && !password) {

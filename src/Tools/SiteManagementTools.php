@@ -82,7 +82,7 @@ trait SiteManagementTools {
 		$this->add_ability( self::INTERNAL_PREFIX . 'site_info_get', 'Get Site Info', 'Get detailed site information', $this->schema(), function () {
 			return $this->get_site_info();
 		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'active_theme_get', 'Get Active Theme', 'Get the active theme information', $this->schema(), function () {
+		$this->add_ability( self::INTERNAL_PREFIX . 'theme_active_get', 'Get Active Theme', 'Get the active theme information', $this->schema(), function () {
 			return $this->get_active_theme();
 		} );
 	}
