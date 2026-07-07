@@ -22,35 +22,35 @@ WordPress 6.9+ provides the core Abilities API. The MCP transport is provided by
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-post_type_list` | List registered WordPress post types with runtime validation metadata |
-| `wp-forge-content_search` | Search and filter content for any registered post type |
-| `wp-forge-content_get` | Get a content item from any registered post type by ID or slug |
-| `wp-forge-content_save` | Create or update content for any registered post type |
-| `wp-forge-content_delete` | Delete content from any registered post type |
+| `wp-forge-post-type-list` | List registered WordPress post types with runtime validation metadata |
+| `wp-forge-content-search` | Search and filter content for any registered post type |
+| `wp-forge-content-get` | Get a content item from any registered post type by ID or slug |
+| `wp-forge-content-save` | Create or update content for any registered post type |
+| `wp-forge-content-delete` | Delete content from any registered post type |
 
-`wp-forge-post_type_list` returns each post type's slug, label, hierarchical status, public status, supported features, registered taxonomies, and REST base. The content tools use the same runtime metadata to validate conditional fields: `parent_id` is accepted only for hierarchical post types, and `taxonomies` may only include taxonomies registered to the selected `post_type`.
+`wp-forge-post-type-list` returns each post type's slug, label, hierarchical status, public status, supported features, registered taxonomies, and REST base. The content tools use the same runtime metadata to validate conditional fields: `parent_id` is accepted only for hierarchical post types, and `taxonomies` may only include taxonomies registered to the selected `post_type`.
 
 #### Taxonomies
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-taxonomy_list` | List registered WordPress taxonomies |
-| `wp-forge-taxonomy_term_list` | List terms for a registered taxonomy |
-| `wp-forge-taxonomy_term_get` | Get a term from a registered taxonomy by ID |
-| `wp-forge-taxonomy_term_save` | Create or update a term in a registered taxonomy |
-| `wp-forge-taxonomy_term_delete` | Delete a term from a registered taxonomy |
+| `wp-forge-taxonomy-list` | List registered WordPress taxonomies |
+| `wp-forge-taxonomy-term-list` | List terms for a registered taxonomy |
+| `wp-forge-taxonomy-term-get` | Get a term from a registered taxonomy by ID |
+| `wp-forge-taxonomy-term-save` | Create or update a term in a registered taxonomy |
+| `wp-forge-taxonomy-term-delete` | Delete a term from a registered taxonomy |
 
 #### Media
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-media_list` | List WordPress media items with pagination and filtering |
-| `wp-forge-media_get` | Get a WordPress media item by ID |
-| `wp-forge-media_file_get` | Get the actual file content of a WordPress media item |
-| `wp-forge-media_upload` | Upload a new media file to WordPress |
-| `wp-forge-media_update` | Update a WordPress media item |
-| `wp-forge-media_delete` | Delete a WordPress media item permanently |
-| `wp-forge-media_search` | Search WordPress media by title, caption, or description |
+| `wp-forge-media-list` | List WordPress media items with pagination and filtering |
+| `wp-forge-media-get` | Get a WordPress media item by ID |
+| `wp-forge-media-file-get` | Get the actual file content of a WordPress media item |
+| `wp-forge-media-upload` | Upload a new media file to WordPress |
+| `wp-forge-media-update` | Update a WordPress media item |
+| `wp-forge-media-delete` | Delete a WordPress media item permanently |
+| `wp-forge-media-search` | Search WordPress media by title, caption, or description |
 
 ### Site Management
 
@@ -58,69 +58,69 @@ WordPress 6.9+ provides the core Abilities API. The MCP transport is provided by
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-user_search` | Search and filter WordPress users with pagination |
-| `wp-forge-user_get` | Get a WordPress user by ID |
-| `wp-forge-user_save` | Create or update a WordPress user |
-| `wp-forge-user_delete` | Delete a WordPress user by ID |
+| `wp-forge-user-search` | Search and filter WordPress users with pagination |
+| `wp-forge-user-get` | Get a WordPress user by ID |
+| `wp-forge-user-save` | Create or update a WordPress user |
+| `wp-forge-user-delete` | Delete a WordPress user by ID |
 
 #### Settings
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-general_settings_get` | Get WordPress general site settings |
-| `wp-forge-general_settings_save` | Save WordPress general site settings |
+| `wp-forge-general-settings-get` | Get WordPress general site settings |
+| `wp-forge-general-settings-save` | Save WordPress general site settings |
 
 #### Site Info
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-site_info_get` | Get detailed site information |
+| `wp-forge-site-info-get` | Get detailed site information |
 
 #### Plugins
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-plugin_list` | List installed WordPress plugins and their activation state |
-| `wp-forge-plugin_install` | Install a WordPress plugin from the WordPress.org plugin directory by slug |
-| `wp-forge-plugin_set_status` | Activate or deactivate an installed WordPress plugin by plugin file path |
-| `wp-forge-plugin_uninstall` | Deactivate and delete an installed WordPress plugin by plugin file path |
+| `wp-forge-plugin-list` | List installed WordPress plugins and their activation state |
+| `wp-forge-plugin-install` | Install a WordPress plugin from the WordPress.org plugin directory by slug |
+| `wp-forge-plugin-set-status` | Activate or deactivate an installed WordPress plugin by plugin file path |
+| `wp-forge-plugin-uninstall` | Deactivate and delete an installed WordPress plugin by plugin file path |
 
 #### Options
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-option_list` | List WordPress options by search or prefix |
-| `wp-forge-option_get` | Get a WordPress option value by name |
-| `wp-forge-option_save` | Create or update a WordPress option value by name |
-| `wp-forge-option_delete` | Delete a WordPress option by name |
+| `wp-forge-option-list` | List WordPress options by search or prefix |
+| `wp-forge-option-get` | Get a WordPress option value by name |
+| `wp-forge-option-save` | Create or update a WordPress option value by name |
+| `wp-forge-option-delete` | Delete a WordPress option by name |
 
 #### Comments
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-comment_list` | List WordPress comments with filtering and pagination |
-| `wp-forge-comment_get` | Get a WordPress comment by ID |
-| `wp-forge-comment_save` | Create or update a WordPress comment |
-| `wp-forge-comment_delete` | Delete a WordPress comment by ID |
+| `wp-forge-comment-list` | List WordPress comments with filtering and pagination |
+| `wp-forge-comment-get` | Get a WordPress comment by ID |
+| `wp-forge-comment-save` | Create or update a WordPress comment |
+| `wp-forge-comment-delete` | Delete a WordPress comment by ID |
 
 #### Site Health
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-site_health_info_get` | Get WordPress Site Health debug information |
-| `wp-forge-site_health_test_list` | List available WordPress Site Health tests |
+| `wp-forge-site-health-info-get` | Get WordPress Site Health debug information |
+| `wp-forge-site-health-test-list` | List available WordPress Site Health tests |
 
 #### Error Logs
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-error_log_read` | Read the tail of the WordPress debug log |
+| `wp-forge-error-log-read` | Read the tail of the WordPress debug log |
 
 #### WP-CLI
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-wp_cli_command_run` | Run a WP-CLI command when WP-CLI execution is explicitly enabled and available |
+| `wp-forge-wp-cli-command-run` | Run a WP-CLI command when WP-CLI execution is explicitly enabled and available |
 
 WP-CLI execution is disabled by default. To enable it, define `WP_FORGE_MCP_ENABLE_WP_CLI` as `true` in `wp-config.php`, or return `true` from the `wp_forge_mcp_enable_wp_cli` filter. If `wp` is not on the web server user's `PATH`, define `WP_FORGE_MCP_WP_CLI_PATH` with the full path to the WP-CLI executable.
 
@@ -128,28 +128,28 @@ WP-CLI execution is disabled by default. To enable it, define `WP_FORGE_MCP_ENAB
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-global_styles_get` | Get a global styles configuration by ID |
-| `wp-forge-global_styles_update` | Update a global styles configuration |
-| `wp-forge-global_styles_active_get` | Get the currently active global styles for the current theme |
-| `wp-forge-global_styles_active_id_get` | Get the active global styles ID |
+| `wp-forge-global-styles-get` | Get a global styles configuration by ID |
+| `wp-forge-global-styles-update` | Update a global styles configuration |
+| `wp-forge-global-styles-active-get` | Get the currently active global styles for the current theme |
+| `wp-forge-global-styles-active-id-get` | Get the active global styles ID |
 
 ### Themes
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-theme_active_get` | Get the active theme information |
-| `wp-forge-theme_list` | List installed WordPress themes and their activation state |
-| `wp-forge-theme_install` | Install a WordPress theme from the WordPress.org theme directory by slug |
-| `wp-forge-theme_activate` | Activate an installed WordPress theme by stylesheet directory name |
-| `wp-forge-theme_delete` | Delete an installed WordPress theme by stylesheet directory name |
+| `wp-forge-theme-active-get` | Get the active theme information |
+| `wp-forge-theme-list` | List installed WordPress themes and their activation state |
+| `wp-forge-theme-install` | Install a WordPress theme from the WordPress.org theme directory by slug |
+| `wp-forge-theme-activate` | Activate an installed WordPress theme by stylesheet directory name |
+| `wp-forge-theme-delete` | Delete an installed WordPress theme by stylesheet directory name |
 
 ### Advanced REST API CRUD
 
 | Tool | Description |
 | --- | --- |
-| `wp-forge-api_function_list` | List available WordPress REST API endpoints that support CRUD |
-| `wp-forge-api_function_details_get` | Get detailed metadata for a specific REST API route and HTTP method |
-| `wp-forge-api_function_run` | Execute a REST API request by route, method, and parameters |
+| `wp-forge-api-function-list` | List available WordPress REST API endpoints that support CRUD |
+| `wp-forge-api-function-details-get` | Get detailed metadata for a specific REST API route and HTTP method |
+| `wp-forge-api-function-run` | Execute a REST API request by route, method, and parameters |
 
 ## Copy-Paste MCP Configuration
 

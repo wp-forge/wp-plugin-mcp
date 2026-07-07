@@ -23,7 +23,7 @@ trait WPCLITools {
 	 * @return void
 	 */
 	private function add_wp_cli_abilities() {
-		$this->add_ability( self::INTERNAL_PREFIX . 'wp_cli_command_run', 'Run WP-CLI Command', 'Run a WP-CLI command when WP-CLI execution is explicitly enabled and available', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'wp-cli-command-run', 'Run WP-CLI Command', 'Run a WP-CLI command when WP-CLI execution is explicitly enabled and available', $this->schema(
 			array(
 				'args'    => array(
 					'type'        => 'array',

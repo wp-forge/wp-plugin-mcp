@@ -25,7 +25,7 @@ trait CommentManagementTools {
 	private function add_comment_abilities() {
 		$id_schema = $this->schema( array( 'id' => $this->int_prop( 'Comment ID.' ) ), array( 'id' ) );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'comment_list', 'List Comments', 'List WordPress comments with filtering and pagination', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'comment-list', 'List Comments', 'List WordPress comments with filtering and pagination', $this->schema(
 			array(
 				'post_id'  => $this->int_prop( 'Post ID.' ),
 				'status'   => $this->string_prop( 'Comment query status. Use a status accepted by WordPress comment queries; all returns every discoverable status.', 'all' ),
@@ -37,11 +37,11 @@ trait CommentManagementTools {
 			return $this->list_comments( $params );
 		}, true, 'moderate_comments' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'comment_get', 'Get Comment', 'Get a WordPress comment by ID', $id_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'comment-get', 'Get Comment', 'Get a WordPress comment by ID', $id_schema, function ( $params ) {
 			return $this->get_comment_tool( (int) $params['id'] );
 		}, true, 'moderate_comments' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'comment_save', 'Save Comment', 'Create or update a WordPress comment', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'comment-save', 'Save Comment', 'Create or update a WordPress comment', $this->schema(
 			array(
 				'id' => $this->int_prop( 'Comment ID. Omit to create a new comment.' ),
 				'post_id' => $this->int_prop( 'Post ID. Required when creating a comment.' ),
@@ -54,7 +54,7 @@ trait CommentManagementTools {
 			return $this->save_comment_tool( $params );
 		}, false, 'moderate_comments' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'comment_delete', 'Delete Comment', 'Delete a WordPress comment by ID', $id_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'comment-delete', 'Delete Comment', 'Delete a WordPress comment by ID', $id_schema, function ( $params ) {
 			return $this->delete_comment_tool( (int) $params['id'] );
 		}, false, 'moderate_comments' );
 	}
@@ -112,7 +112,7 @@ trait CommentManagementTools {
 
 		foreach ( array( 'post_id', 'content' ) as $required ) {
 			if ( ! isset( $params[ $required ] ) || '' === (string) $params[ $required ] ) {
-				return Response::error( 'comment_save requires ' . $required . ' when creating a comment.', 400 );
+				return Response::error( 'comment-save requires ' . $required . ' when creating a comment.', 400 );
 			}
 		}
 

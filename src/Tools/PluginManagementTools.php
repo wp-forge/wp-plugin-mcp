@@ -41,11 +41,11 @@ trait PluginManagementTools {
 			array( 'plugin_file', 'status' )
 		);
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'plugin_list', 'List Plugins', 'List installed WordPress plugins and their activation state', $this->schema(), function () {
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-list', 'List Plugins', 'List installed WordPress plugins and their activation state', $this->schema(), function () {
 			return $this->list_plugins();
 		}, true, 'activate_plugins' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'plugin_install', 'Install Plugin', 'Install a WordPress plugin from the WordPress.org plugin directory by slug', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-install', 'Install Plugin', 'Install a WordPress plugin from the WordPress.org plugin directory by slug', $this->schema(
 			array(
 				'slug' => $this->string_prop( 'WordPress.org plugin slug, such as akismet.' ),
 			),
@@ -54,11 +54,11 @@ trait PluginManagementTools {
 			return $this->install_plugin( $params['slug'] );
 		}, false, 'install_plugins' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'plugin_set_status', 'Set Plugin Status', 'Activate or deactivate an installed WordPress plugin by plugin file path', $plugin_status_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-set-status', 'Set Plugin Status', 'Activate or deactivate an installed WordPress plugin by plugin file path', $plugin_status_schema, function ( $params ) {
 			return $this->set_plugin_status( $params['plugin_file'], $params['status'] );
 		}, false, 'activate_plugins' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'plugin_uninstall', 'Uninstall Plugin', 'Deactivate and delete an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-uninstall', 'Uninstall Plugin', 'Deactivate and delete an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
 			return $this->uninstall_plugin( $params['plugin_file'] );
 		}, false, 'delete_plugins' );
 	}

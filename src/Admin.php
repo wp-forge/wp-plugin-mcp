@@ -144,7 +144,7 @@ class Admin {
 				<li><?php esc_html_e( 'Replace YOUR_APPLICATION_PASSWORD in the configuration.', 'wp-plugin-mcp' ); ?></li>
 			</ol>
 
-			<p><?php esc_html_e( 'All MCP tools exposed by this plugin use the wp-forge prefix, such as wp-forge-content_search and wp-forge-site_info_get.', 'wp-plugin-mcp' ); ?></p>
+			<p><?php esc_html_e( 'All MCP tools exposed by this plugin use the wp-forge prefix, such as wp-forge-content-search and wp-forge-site-info-get.', 'wp-plugin-mcp' ); ?></p>
 
 			<h2><?php esc_html_e( 'Activity Log', 'wp-plugin-mcp' ); ?></h2>
 			<form method="post" action="<?php echo esc_url( admin_url( 'options-general.php?page=wp-plugin-mcp' ) ); ?>" style="margin: 0 0 16px;">
