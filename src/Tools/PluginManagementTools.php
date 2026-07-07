@@ -29,18 +29,6 @@ trait PluginManagementTools {
 			),
 			array( 'plugin_file' )
 		);
-		$plugin_status_schema = $this->schema(
-			array(
-				'plugin_file' => $this->string_prop( 'Installed plugin file path.' ),
-				'status'      => array(
-					'type'        => 'string',
-					'description' => 'Desired plugin status.',
-					'enum'        => array( 'active', 'inactive' ),
-				),
-			),
-			array( 'plugin_file', 'status' )
-		);
-
 		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-list', 'List Plugins', 'List installed WordPress plugins and their activation state', $this->schema(), function () {
 			return $this->list_plugins();
 		}, true, 'activate_plugins' );
@@ -54,8 +42,12 @@ trait PluginManagementTools {
 			return $this->install_plugin( $params['slug'] );
 		}, false, 'install_plugins' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-set-status', 'Set Plugin Status', 'Activate or deactivate an installed WordPress plugin by plugin file path', $plugin_status_schema, function ( $params ) {
-			return $this->set_plugin_status( $params['plugin_file'], $params['status'] );
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-activate', 'Activate Plugin', 'Activate an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
+			return $this->activate_plugin_tool( $params['plugin_file'] );
+		}, false, 'activate_plugins' );
+
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-deactivate', 'Deactivate Plugin', 'Deactivate an active WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
+			return $this->deactivate_plugin_tool( $params['plugin_file'] );
 		}, false, 'activate_plugins' );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-uninstall', 'Uninstall Plugin', 'Deactivate and delete an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
@@ -200,27 +192,6 @@ trait PluginManagementTools {
 			'plugin_file' => $plugin_file,
 			'active'      => is_plugin_active( $plugin_file ),
 		);
-	}
-
-	/**
-	 * Set plugin activation status.
-	 *
-	 * @param string $plugin_file Plugin file path.
-	 * @param string $status Desired status.
-	 * @return array<string,mixed>
-	 */
-	private function set_plugin_status( $plugin_file, $status ) {
-		$status = strtolower( (string) $status );
-
-		if ( 'active' === $status ) {
-			return $this->activate_plugin_tool( $plugin_file );
-		}
-
-		if ( 'inactive' === $status ) {
-			return $this->deactivate_plugin_tool( $plugin_file );
-		}
-
-		return Response::error( 'Unsupported plugin status: ' . $status, 400 );
 	}
 
 	/**

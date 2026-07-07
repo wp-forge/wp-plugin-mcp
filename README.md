@@ -82,7 +82,8 @@ WordPress 6.9+ provides the core Abilities API. The MCP transport is provided by
 | --- | --- |
 | `wp-forge-plugin-list` | List installed WordPress plugins and their activation state |
 | `wp-forge-plugin-install` | Install a WordPress plugin from the WordPress.org plugin directory by slug |
-| `wp-forge-plugin-set-status` | Activate or deactivate an installed WordPress plugin by plugin file path |
+| `wp-forge-plugin-activate` | Activate an installed WordPress plugin by plugin file path |
+| `wp-forge-plugin-deactivate` | Deactivate an active WordPress plugin by plugin file path |
 | `wp-forge-plugin-uninstall` | Deactivate and delete an installed WordPress plugin by plugin file path |
 
 #### Options

@@ -199,7 +199,8 @@ const expectedTools = [
   'wp-forge-site-info-get',
   'wp-forge-plugin-list',
   'wp-forge-plugin-install',
-  'wp-forge-plugin-set-status',
+  'wp-forge-plugin-activate',
+  'wp-forge-plugin-deactivate',
   'wp-forge-plugin-uninstall',
   'wp-forge-theme-list',
   'wp-forge-theme-install',
@@ -365,8 +366,8 @@ assert(
   'wp-forge-plugin-list did not include this plugin'
 );
 await expectError('wp-forge-plugin-install', { slug: `missing-mcp-plugin-${suffix}` });
-await expectError('wp-forge-plugin-set-status', { plugin_file: `missing-mcp-plugin-${suffix}/missing.php`, status: 'active' }, 404);
-await expectError('wp-forge-plugin-set-status', { plugin_file: `missing-mcp-plugin-${suffix}/missing.php`, status: 'inactive' }, 404);
+await expectError('wp-forge-plugin-activate', { plugin_file: `missing-mcp-plugin-${suffix}/missing.php` }, 404);
+await expectError('wp-forge-plugin-deactivate', { plugin_file: `missing-mcp-plugin-${suffix}/missing.php` }, 404);
 await expectError('wp-forge-plugin-uninstall', { plugin_file: 'wp-plugin-mcp/wp-plugin-mcp.php' }, 400);
 
 const themes = await expectSuccess('wp-forge-theme-list');
