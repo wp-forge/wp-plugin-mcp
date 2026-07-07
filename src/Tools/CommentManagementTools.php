@@ -28,7 +28,7 @@ trait CommentManagementTools {
 		$this->add_ability( self::INTERNAL_PREFIX . 'list-comments', 'List Comments', 'List WordPress comments with filtering and pagination', $this->schema(
 			array(
 				'post_id'  => $this->int_prop( 'Post ID.' ),
-				'status'   => $this->string_prop( 'Comment status: approve, hold, spam, trash, or all.', 'all' ),
+				'status'   => $this->string_prop( 'Comment query status. Use a status accepted by WordPress comment queries; all returns every discoverable status.', 'all' ),
 				'search'   => $this->string_prop( 'Search term.' ),
 				'page'     => $this->int_prop( 'Page number.', 1 ),
 				'per_page' => $this->int_prop( 'Comments per page.', 20 ),
@@ -48,7 +48,7 @@ trait CommentManagementTools {
 				'content' => $this->string_prop( 'Comment content.' ),
 				'author_name' => $this->string_prop( 'Author name.' ),
 				'author_email' => $this->string_prop( 'Author email.' ),
-				'status' => $this->string_prop( 'Comment status: approve, approved, hold, unapproved, spam, or trash.', 'hold' ),
+				'status' => $this->string_prop( 'Comment moderation status accepted by WordPress comment APIs.', 'hold' ),
 			)
 		), function ( $params ) {
 			return $this->save_comment_tool( $params );

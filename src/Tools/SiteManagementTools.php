@@ -21,19 +21,24 @@ trait SiteManagementTools {
 	 * @return void
 	 */
 	private function add_site_abilities() {
-		$this->add_ability( self::INTERNAL_PREFIX . 'users-search', 'Search Users', 'Search and filter WordPress users with pagination', $this->schema(
+		$users_search_schema = function () {
+			return $this->schema(
 			array(
 				'search'   => $this->string_prop( 'Search term.' ),
-				'role'     => $this->string_prop( 'User role.' ),
+				'role'     => $this->enum_string_prop( 'Editable user role slug.', $this->get_editable_role_slugs() ),
 				'page'     => $this->int_prop( 'Page number.', 1 ),
 				'per_page' => $this->int_prop( 'Users per page.', 10 ),
 			)
-		), function ( $params ) {
+			);
+		};
+
+		$this->add_ability( self::INTERNAL_PREFIX . 'users-search', 'Search Users', 'Search and filter WordPress users with pagination', $users_search_schema, function ( $params ) {
 			return $this->search_users( $params );
 		}, true, 'list_users' );
 
 		$user_get_schema = $this->schema( array( 'id' => $this->int_prop( 'User ID.' ) ), array( 'id' ) );
-		$user_write_schema = $this->schema(
+		$user_write_schema = function () {
+			return $this->schema(
 			array(
 				'id'         => $this->int_prop( 'User ID. Omit to create a new user.' ),
 				'username'   => $this->string_prop( 'Username.' ),
@@ -41,9 +46,10 @@ trait SiteManagementTools {
 				'password'   => $this->string_prop( 'Password. Required when creating a user.' ),
 				'first_name' => $this->string_prop( 'First name.' ),
 				'last_name'  => $this->string_prop( 'Last name.' ),
-				'role'       => $this->string_prop( 'Role.' ),
+				'role'       => $this->enum_string_prop( 'Editable user role slug.', $this->get_editable_role_slugs() ),
 			)
-		);
+			);
+		};
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'get-user', 'Get User', 'Get a WordPress user by ID', $user_get_schema, function ( $params ) {
 			return $this->get_user( (int) $params['id'] );

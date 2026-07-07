@@ -25,7 +25,7 @@ trait ThemeManagementTools {
 	private function add_theme_abilities() {
 		$stylesheet_schema = $this->schema(
 			array(
-				'stylesheet' => $this->string_prop( 'Theme stylesheet directory name.' ),
+				'stylesheet' => $this->string_prop( 'Installed theme stylesheet directory name.' ),
 			),
 			array( 'stylesheet' )
 		);

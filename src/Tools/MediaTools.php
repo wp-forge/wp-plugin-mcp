@@ -21,14 +21,16 @@ trait MediaTools {
 	 * @return void
 	 */
 	private function add_media_abilities() {
-		$list_schema = $this->schema(
+		$list_schema = function () {
+			return $this->schema(
 			array(
 				'search'    => $this->string_prop( 'Search term.' ),
-				'mime_type' => $this->string_prop( 'MIME type filter.' ),
+				'mime_type' => $this->enum_string_prop( 'Allowed upload MIME type filter.', $this->get_allowed_mime_types() ),
 				'page'      => $this->int_prop( 'Page number.', 1 ),
 				'per_page'  => $this->int_prop( 'Items per page.', 10 ),
 			)
-		);
+			);
+		};
 		$id_schema = $this->schema( array( 'id' => $this->int_prop( 'Media item ID.' ) ), array( 'id' ) );
 		$update_schema = $this->schema(
 			array(
@@ -40,15 +42,17 @@ trait MediaTools {
 			),
 			array( 'id' )
 		);
-		$upload_schema = $this->schema(
+		$upload_schema = function () {
+			return $this->schema(
 			array(
 				'filename'  => $this->string_prop( 'File name.' ),
-				'mime_type' => $this->string_prop( 'MIME type.' ),
+				'mime_type' => $this->enum_string_prop( 'Allowed upload MIME type.', $this->get_allowed_mime_types() ),
 				'base64'    => $this->string_prop( 'Base64-encoded file contents.' ),
 				'title'     => $this->string_prop( 'Title.' ),
 			),
 			array( 'filename', 'base64' )
-		);
+			);
+		};
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'list-media', 'List Media', 'List WordPress media items with pagination and filtering', $list_schema, function ( $params ) {
 			return $this->search_content_items( 'attachment', array_merge( array( 'status' => 'inherit' ), $params ) );

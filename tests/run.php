@@ -22,6 +22,45 @@ use WP_Forge\Plugin;
 $registered_abilities = array();
 $added_actions        = array();
 $added_filters        = array();
+$test_post_statuses   = array(
+	'publish'       => 'Published',
+	'future'        => 'Scheduled',
+	'draft'         => 'Draft',
+	'pending'       => 'Pending',
+	'private'       => 'Private',
+	'trash'         => 'Trash',
+	'inherit'       => 'Inherit',
+	'mcp-reviewing' => 'MCP Reviewing',
+);
+$test_taxonomies      = array(
+	'category'  => array(
+		'name'        => 'category',
+		'label'       => 'Categories',
+		'description' => '',
+		'public'      => true,
+		'hierarchical' => true,
+		'object_type' => array( 'post' ),
+		'rest_base'   => 'categories',
+	),
+	'post_tag'  => array(
+		'name'        => 'post_tag',
+		'label'       => 'Tags',
+		'description' => '',
+		'public'      => true,
+		'hierarchical' => false,
+		'object_type' => array( 'post' ),
+		'rest_base'   => 'tags',
+	),
+	'mcp_genre' => array(
+		'name'        => 'mcp_genre',
+		'label'       => 'Genres',
+		'description' => 'Custom taxonomy registered by another plugin.',
+		'public'      => true,
+		'hierarchical' => false,
+		'object_type' => array( 'mcp_book' ),
+		'rest_base'   => 'mcp-genres',
+	),
+);
 $test_post_types      = array(
 	'post'          => array(
 		'name'                => 'post',
@@ -73,6 +112,23 @@ $test_post_types      = array(
 		'rest_base'           => '',
 		'supports'            => array(),
 		'taxonomies'          => array(),
+	),
+	'mcp_book'      => array(
+		'name'                => 'mcp_book',
+		'label'               => 'Books',
+		'description'         => 'Custom books.',
+		'public'              => true,
+		'hierarchical'        => false,
+		'show_in_rest'        => true,
+		'show_ui'             => true,
+		'show_in_menu'        => true,
+		'show_in_nav_menus'   => true,
+		'exclude_from_search' => false,
+		'publicly_queryable'  => true,
+		'_builtin'            => false,
+		'rest_base'           => 'mcp-books',
+		'supports'            => array( 'title' => true, 'editor' => true ),
+		'taxonomies'          => array( 'mcp_genre' ),
 	),
 );
 
@@ -142,6 +198,62 @@ if ( ! function_exists( 'get_object_taxonomies' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_post_stati' ) ) {
+	function get_post_stati( $args = array(), $output = 'names' ) {
+		global $test_post_statuses;
+		unset( $args );
+
+		if ( 'objects' === $output ) {
+			return array_map(
+				static function ( $label, $name ) {
+					return (object) array(
+						'name'  => $name,
+						'label' => $label,
+					);
+				},
+				$test_post_statuses,
+				array_keys( $test_post_statuses )
+			);
+		}
+
+		return array_keys( $test_post_statuses );
+	}
+}
+
+if ( ! function_exists( 'get_taxonomies' ) ) {
+	function get_taxonomies( $args = array(), $output = 'names' ) {
+		global $test_taxonomies;
+		unset( $args );
+
+		$taxonomies = array();
+		foreach ( $test_taxonomies as $slug => $taxonomy ) {
+			$taxonomies[ $slug ] = (object) $taxonomy;
+		}
+
+		return 'objects' === $output ? $taxonomies : array_keys( $taxonomies );
+	}
+}
+
+if ( ! function_exists( 'get_editable_roles' ) ) {
+	function get_editable_roles() {
+		return array(
+			'administrator' => array( 'name' => 'Administrator' ),
+			'editor'        => array( 'name' => 'Editor' ),
+			'mcp_manager'   => array( 'name' => 'MCP Manager' ),
+		);
+	}
+}
+
+if ( ! function_exists( 'get_allowed_mime_types' ) ) {
+	function get_allowed_mime_types() {
+		return array(
+			'jpg|jpeg|jpe' => 'image/jpeg',
+			'png'          => 'image/png',
+			'mcp'          => 'application/x-mcp-test',
+		);
+	}
+}
+
 if ( ! function_exists( 'plugin_basename' ) ) {
 	function plugin_basename( $file ) {
 		return basename( $file );
@@ -168,6 +280,24 @@ function assert_same( $expected, $actual, $message ) {
 }
 
 $abilities = new Abilities();
+$test_post_statuses['mcp-late-review'] = 'MCP Late Review';
+$test_post_types['mcp_movie']          = array(
+	'name'                => 'mcp_movie',
+	'label'               => 'Movies',
+	'description'         => 'Custom movies registered after ability construction.',
+	'public'              => true,
+	'hierarchical'        => false,
+	'show_in_rest'        => true,
+	'show_ui'             => true,
+	'show_in_menu'        => true,
+	'show_in_nav_menus'   => true,
+	'exclude_from_search' => false,
+	'publicly_queryable'  => true,
+	'_builtin'            => false,
+	'rest_base'           => 'mcp-movies',
+	'supports'            => array( 'title' => true ),
+	'taxonomies'          => array( 'mcp_genre' ),
+);
 $all       = $abilities->list_abilities();
 $names     = array_column( $all, 'name' );
 
@@ -245,6 +375,45 @@ assert_same( array( 'wp-forge-search-content', 'wp-forge-search-media' ), array_
 $schema = $abilities->get_schema( 'wp-forge-save-content' );
 assert_same( 'wp-forge-save-content', $schema['name'], 'Schema lookup should accept MCP tool names.' );
 assert_same( false, $schema['annotations']['readOnlyHint'], 'Save content should be marked writable.' );
+assert_true( in_array( 'mcp_movie', $schema['input_schema']['properties']['post_type']['enum'], true ), 'Save content schema should include post types registered after ability construction.' );
+assert_true( in_array( 'mcp-reviewing', $schema['input_schema']['properties']['status']['enum'], true ), 'Save content schema should include custom post statuses.' );
+assert_true( in_array( 'mcp-late-review', $schema['input_schema']['properties']['status']['enum'], true ), 'Save content schema should resolve post statuses lazily.' );
+
+$search_schema = $abilities->get_schema( 'wp-forge-search-content' );
+assert_true( in_array( 'any', $search_schema['input_schema']['properties']['status']['enum'], true ), 'Search content schema should expose the WordPress any pseudo-status.' );
+assert_true( in_array( 'mcp_genre', $search_schema['input_schema']['properties']['taxonomy_query']['properties']['taxonomy']['enum'], true ), 'Search content schema should include custom taxonomies.' );
+
+$taxonomy_schema = $abilities->get_schema( 'wp-forge-save-taxonomy-term' );
+assert_true( in_array( 'mcp_genre', $taxonomy_schema['input_schema']['properties']['taxonomy']['enum'], true ), 'Taxonomy term schema should include plugin-registered taxonomies.' );
+
+$user_schema = $abilities->get_schema( 'wp-forge-save-user' );
+assert_true( in_array( 'mcp_manager', $user_schema['input_schema']['properties']['role']['enum'], true ), 'User schema should include custom editable roles.' );
+
+$media_schema = $abilities->get_schema( 'wp-forge-upload-media' );
+assert_true( in_array( 'application/x-mcp-test', $media_schema['input_schema']['properties']['mime_type']['enum'], true ), 'Media schema should include custom allowed MIME types.' );
+
+$comment_schema = $abilities->get_schema( 'wp-forge-save-comment' );
+assert_true( ! isset( $comment_schema['input_schema']['properties']['status']['enum'] ), 'Comment status schema should stay flexible when custom statuses cannot be reliably discovered.' );
+
+$invalid_search_status = $abilities->call( 'wp-forge-search-content', array( 'post_type' => 'post', 'status' => 'mcp-missing-status' ) );
+assert_same( 'error', $invalid_search_status['status'], 'Search content should reject unknown post statuses before querying.' );
+assert_same( 400, $invalid_search_status['statusCode'], 'Unknown query post statuses should be a client error.' );
+
+$invalid_save_status = $abilities->call( 'wp-forge-save-content', array( 'post_type' => 'post', 'title' => 'Invalid status', 'status' => 'mcp-missing-status' ) );
+assert_same( 'error', $invalid_save_status['status'], 'Save content should reject unknown post statuses before writing.' );
+assert_same( 400, $invalid_save_status['statusCode'], 'Unknown write post statuses should be a client error.' );
+
+$invalid_any_save_status = $abilities->call( 'wp-forge-save-content', array( 'post_type' => 'post', 'title' => 'Invalid status', 'status' => 'any' ) );
+assert_same( 'error', $invalid_any_save_status['status'], 'Save content should reject the any pseudo-status.' );
+assert_same( 400, $invalid_any_save_status['statusCode'], 'The any pseudo-status should be rejected for writes.' );
+
+$invalid_role = $abilities->call( 'wp-forge-save-user', array( 'username' => 'bad_role', 'email' => 'bad-role@example.com', 'password' => 'password', 'role' => 'mcp_missing_role' ) );
+assert_same( 'error', $invalid_role['status'], 'Save user should reject unknown roles before writing.' );
+assert_same( 400, $invalid_role['statusCode'], 'Unknown roles should be a client error.' );
+
+$invalid_mime = $abilities->call( 'wp-forge-upload-media', array( 'filename' => 'bad.bin', 'base64' => base64_encode( 'bad' ), 'mime_type' => 'application/x-missing-mcp' ) );
+assert_same( 'error', $invalid_mime['status'], 'Upload media should reject unsupported MIME types before writing.' );
+assert_same( 400, $invalid_mime['statusCode'], 'Unsupported MIME types should be a client error.' );
 
 $post_types_schema = $abilities->get_schema( 'wp-forge-list-post-types' );
 assert_same( 'boolean', $post_types_schema['input_schema']['properties']['public']['type'], 'Post type list should expose public filtering.' );

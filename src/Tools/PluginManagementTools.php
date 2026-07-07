@@ -25,7 +25,7 @@ trait PluginManagementTools {
 	private function add_plugin_abilities() {
 		$plugin_file_schema = $this->schema(
 			array(
-				'plugin_file' => $this->string_prop( 'Plugin file path, such as akismet/akismet.php.' ),
+				'plugin_file' => $this->string_prop( 'Installed plugin file path.' ),
 			),
 			array( 'plugin_file' )
 		);

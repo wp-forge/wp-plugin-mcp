@@ -34,9 +34,10 @@ trait ContentManagementTools {
 				'_builtin'            => $this->bool_prop( 'Filter by built-in status.' ),
 			)
 		);
-		$content_id_schema      = $this->schema(
+		$content_id_schema      = function () {
+			return $this->schema(
 			array(
-				'post_type' => $this->string_prop( 'Post type slug.' ),
+				'post_type' => $this->enum_string_prop( 'Registered post type slug.', $this->get_registered_post_type_slugs() ),
 				'id'        => $this->int_prop( 'Content item ID.' ),
 				'slug'      => $this->string_prop( 'Content item slug. Used only when id is omitted.' ),
 				'fields'    => array(
@@ -46,20 +47,8 @@ trait ContentManagementTools {
 				),
 			),
 			array( 'post_type' )
-		);
-		$taxonomy_query_schema  = array(
-			'type'                 => 'object',
-			'description'          => 'Filter by a taxonomy registered to the post type.',
-			'properties'           => array(
-				'taxonomy' => $this->string_prop( 'Taxonomy slug.' ),
-				'terms'    => array(
-					'type'        => 'array',
-					'description' => 'Term IDs, slugs, or names.',
-					'items'       => array( 'type' => array( 'integer', 'string' ) ),
-				),
-			),
-			'additionalProperties' => false,
-		);
+			);
+		};
 		$date_query_schema      = array(
 			'type'                 => 'object',
 			'description'          => 'Filter by content dates.',
@@ -82,11 +71,26 @@ trait ContentManagementTools {
 			'description'          => 'Post meta values keyed by meta key.',
 			'additionalProperties' => array( 'type' => array( 'array', 'object', 'string', 'number', 'integer', 'boolean', 'null' ) ),
 		);
-		$search_content_schema  = $this->schema(
+		$search_content_schema  = function () use ( $date_query_schema ) {
+			$taxonomy_query_schema = array(
+				'type'                 => 'object',
+				'description'          => 'Filter by a taxonomy registered to the post type.',
+				'properties'           => array(
+					'taxonomy' => $this->enum_string_prop( 'Registered taxonomy slug.', $this->get_registered_taxonomy_slugs() ),
+					'terms'    => array(
+						'type'        => 'array',
+						'description' => 'Term IDs, slugs, or names.',
+						'items'       => array( 'type' => array( 'integer', 'string' ) ),
+					),
+				),
+				'additionalProperties' => false,
+			);
+
+			return $this->schema(
 			array(
-				'post_type'      => $this->string_prop( 'Post type slug.' ),
+				'post_type'      => $this->enum_string_prop( 'Registered post type slug.', $this->get_registered_post_type_slugs() ),
 				'query'          => $this->string_prop( 'Free-text search term.' ),
-				'status'         => $this->string_prop( 'Post status.', 'publish' ),
+				'status'         => $this->enum_string_prop( 'Registered post status or the WordPress query any pseudo-status.', $this->get_registered_post_status_names( true ), 'publish' ),
 				'author'         => $this->int_prop( 'Author user ID.' ),
 				'taxonomy_query' => $taxonomy_query_schema,
 				'date_query'     => $date_query_schema,
@@ -96,15 +100,17 @@ trait ContentManagementTools {
 				'per_page'       => $this->int_prop( 'Items per page.', 10 ),
 			),
 			array( 'post_type' )
-		);
-		$save_content_schema    = $this->schema(
+			);
+		};
+		$save_content_schema    = function () use ( $taxonomies_schema, $meta_schema ) {
+			return $this->schema(
 			array(
-				'post_type'         => $this->string_prop( 'Post type slug.' ),
+				'post_type'         => $this->enum_string_prop( 'Registered post type slug.', $this->get_registered_post_type_slugs() ),
 				'id'                => $this->int_prop( 'Content item ID. Omit to create a new item.' ),
 				'title'             => $this->string_prop( 'Title. Required when creating content.' ),
 				'content'           => $this->string_prop( 'Content.' ),
 				'excerpt'           => $this->string_prop( 'Excerpt.' ),
-				'status'            => $this->string_prop( 'Status.', 'draft' ),
+				'status'            => $this->enum_string_prop( 'Registered post status.', $this->get_registered_post_status_names(), 'draft' ),
 				'author'            => $this->int_prop( 'Author user ID.' ),
 				'parent_id'         => $this->int_prop( 'Parent content ID. Only valid for hierarchical post types.' ),
 				'taxonomies'        => $taxonomies_schema,
@@ -112,15 +118,18 @@ trait ContentManagementTools {
 				'featured_media_id' => $this->int_prop( 'Featured media attachment ID.' ),
 			),
 			array( 'post_type' )
-		);
-		$delete_content_schema  = $this->schema(
+			);
+		};
+		$delete_content_schema  = function () {
+			return $this->schema(
 			array(
-				'post_type' => $this->string_prop( 'Post type slug.' ),
+				'post_type' => $this->enum_string_prop( 'Registered post type slug.', $this->get_registered_post_type_slugs() ),
 				'id'        => $this->int_prop( 'Content item ID.' ),
 				'force'     => $this->bool_prop( 'Bypass trash and permanently delete.', false ),
 			),
 			array( 'post_type', 'id' )
-		);
+			);
+		};
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'list-post-types', 'List Post Types', 'List registered WordPress post types with runtime validation metadata', $list_post_types_schema, function ( $params ) {
 			return $this->list_post_types( $params );

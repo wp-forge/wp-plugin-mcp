@@ -108,7 +108,7 @@ class Abilities {
 			$tools[] = array(
 				'name'        => $this->ability_to_tool_name( $name ),
 				'description' => $ability['description'],
-				'inputSchema' => $ability['input_schema'],
+				'inputSchema' => $this->resolve_input_schema( $ability['input_schema'] ),
 				'annotations' => $ability['annotations'],
 			);
 		}
@@ -135,7 +135,7 @@ class Abilities {
 			'name'         => $this->ability_to_tool_name( $internal ),
 			'label'        => $ability['label'],
 			'description'  => $ability['description'],
-			'input_schema' => $ability['input_schema'],
+			'input_schema' => $this->resolve_input_schema( $ability['input_schema'] ),
 			'annotations'  => $ability['annotations'],
 		);
 	}
@@ -168,7 +168,7 @@ class Abilities {
 					'label'               => $ability['label'],
 					'description'         => $ability['description'],
 					'category'            => 'site',
-					'input_schema'        => $ability['input_schema'],
+					'input_schema'        => $this->resolve_input_schema( $ability['input_schema'] ),
 					'output_schema'       => $this->response_schema(),
 					'execute_callback'    => function ( $input ) use ( $name ) {
 						return $this->call( $name, is_array( $input ) ? $input : array() );
@@ -255,7 +255,7 @@ class Abilities {
 	 * @param string              $name Internal ability name.
 	 * @param string              $label Human label.
 	 * @param string              $description Description.
-	 * @param array<string,mixed> $input_schema JSON schema.
+	 * @param array<string,mixed>|callable $input_schema JSON schema or schema factory.
 	 * @param callable            $callback Callback.
 	 * @param bool                $read_only Whether ability is read-only.
 	 * @param string              $capability Required WordPress capability.
@@ -270,6 +270,20 @@ class Abilities {
 			'annotations'  => array( 'readOnlyHint' => (bool) $read_only ),
 			'capability'   => $capability,
 		);
+	}
+
+	/**
+	 * Resolve an ability input schema.
+	 *
+	 * Some schema fields depend on WordPress runtime registrations that plugins
+	 * commonly add during init, so schema factories are evaluated only when the
+	 * schema is exposed.
+	 *
+	 * @param array<string,mixed>|callable $input_schema JSON schema or schema factory.
+	 * @return array<string,mixed>
+	 */
+	private function resolve_input_schema( $input_schema ) {
+		return is_callable( $input_schema ) ? call_user_func( $input_schema ) : $input_schema;
 	}
 
 	/**
@@ -366,6 +380,89 @@ class Abilities {
 	}
 
 	/**
+	 * String schema property with a runtime enum when values are discoverable.
+	 *
+	 * @param string            $description Description.
+	 * @param array<int,string> $values Enum values.
+	 * @param string|null       $default Default value.
+	 * @return array<string,mixed>
+	 */
+	private function enum_string_prop( $description, $values, $default = null ) {
+		$values = array_values( array_unique( array_filter( array_map( 'strval', $values ), 'strlen' ) ) );
+		sort( $values );
+
+		$prop = $this->string_prop( $description, $default );
+		if ( $values ) {
+			$prop['enum'] = $values;
+		}
+
+		return $prop;
+	}
+
+	/**
+	 * Get registered post type slugs.
+	 *
+	 * @return array<int,string>
+	 */
+	private function get_registered_post_type_slugs() {
+		return function_exists( 'get_post_types' ) ? array_values( get_post_types( array(), 'names' ) ) : array();
+	}
+
+	/**
+	 * Get registered taxonomy slugs.
+	 *
+	 * @return array<int,string>
+	 */
+	private function get_registered_taxonomy_slugs() {
+		return function_exists( 'get_taxonomies' ) ? array_values( get_taxonomies( array(), 'names' ) ) : array();
+	}
+
+	/**
+	 * Get registered post status names.
+	 *
+	 * @param bool $include_any Include the WP_Query any pseudo-status.
+	 * @return array<int,string>
+	 */
+	private function get_registered_post_status_names( $include_any = false ) {
+		$statuses = function_exists( 'get_post_stati' ) ? array_values( get_post_stati( array(), 'names' ) ) : array();
+
+		if ( $include_any ) {
+			$statuses[] = 'any';
+		}
+
+		return $statuses;
+	}
+
+	/**
+	 * Get editable role slugs.
+	 *
+	 * @return array<int,string>
+	 */
+	private function get_editable_role_slugs() {
+		if ( function_exists( 'get_editable_roles' ) ) {
+			return array_keys( get_editable_roles() );
+		}
+
+		if ( function_exists( 'wp_roles' ) ) {
+			$roles = wp_roles();
+			if ( isset( $roles->roles ) && is_array( $roles->roles ) ) {
+				return array_keys( $roles->roles );
+			}
+		}
+
+		return array();
+	}
+
+	/**
+	 * Get allowed MIME types.
+	 *
+	 * @return array<int,string>
+	 */
+	private function get_allowed_mime_types() {
+		return function_exists( 'get_allowed_mime_types' ) ? array_values( get_allowed_mime_types() ) : array();
+	}
+
+	/**
 	 * Integer schema property.
 	 *
 	 * @param string   $description Description.
@@ -406,6 +503,20 @@ class Abilities {
 	}
 
 	/**
+	 * Normalize a WordPress key-like value.
+	 *
+	 * @param mixed $value Value to normalize.
+	 * @return string
+	 */
+	private function sanitize_key_value( $value ) {
+		if ( function_exists( 'sanitize_key' ) ) {
+			return sanitize_key( $value );
+		}
+
+		return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( trim( (string) $value ) ) );
+	}
+
+	/**
 	 * Normalize a name prefix to MCP tool hyphen form.
 	 *
 	 * @param string $name Name.
@@ -437,6 +548,22 @@ class Abilities {
 	 * @return array<string,mixed>|array<int,array<string,mixed>>
 	 */
 	private function search_content_items( $post_type, $params ) {
+		if ( isset( $params['status'] ) ) {
+			$status_check = $this->validate_post_status( $params['status'], 'query' );
+			if ( isset( $status_check['status'] ) && 'error' === $status_check['status'] ) {
+				return $status_check;
+			}
+			$params['status'] = $status_check['post_status'];
+		}
+
+		if ( isset( $params['mime_type'] ) ) {
+			$mime_type_check = $this->validate_mime_type( $params['mime_type'] );
+			if ( isset( $mime_type_check['status'] ) && 'error' === $mime_type_check['status'] ) {
+				return $mime_type_check;
+			}
+			$params['mime_type'] = $mime_type_check['mime_type'];
+		}
+
 		$missing = $this->require_wordpress();
 		if ( $missing ) {
 			return $missing;
@@ -464,14 +591,22 @@ class Abilities {
 	 * @return array<string,mixed>|array<int,array<string,mixed>>
 	 */
 	private function search_content( $params ) {
-		$missing = $this->require_wordpress();
-		if ( $missing ) {
-			return $missing;
-		}
-
 		$post_type_check = $this->validate_post_type( $params['post_type'] );
 		if ( isset( $post_type_check['status'] ) && 'error' === $post_type_check['status'] ) {
 			return $post_type_check;
+		}
+
+		if ( isset( $params['status'] ) ) {
+			$status_check = $this->validate_post_status( $params['status'], 'query' );
+			if ( isset( $status_check['status'] ) && 'error' === $status_check['status'] ) {
+				return $status_check;
+			}
+			$params['status'] = $status_check['post_status'];
+		}
+
+		$missing = $this->require_wordpress();
+		if ( $missing ) {
+			return $missing;
 		}
 
 		$args = array(
@@ -559,10 +694,6 @@ class Abilities {
 	 * @return array<string,mixed>
 	 */
 	private function save_content( $params ) {
-		if ( ! function_exists( 'wp_insert_post' ) || ! function_exists( 'wp_update_post' ) ) {
-			return Response::error( 'This ability requires a WordPress runtime.', 500 );
-		}
-
 		$post_type_check = $this->validate_post_type( $params['post_type'] );
 		if ( isset( $post_type_check['status'] ) && 'error' === $post_type_check['status'] ) {
 			return $post_type_check;
@@ -571,6 +702,14 @@ class Abilities {
 		$is_update = isset( $params['id'] );
 		if ( ! $is_update && ( ! isset( $params['title'] ) || '' === trim( (string) $params['title'] ) ) ) {
 			return Response::error( 'save-content requires title when creating content.', 400 );
+		}
+
+		if ( isset( $params['status'] ) ) {
+			$status_check = $this->validate_post_status( $params['status'], 'write' );
+			if ( isset( $status_check['status'] ) && 'error' === $status_check['status'] ) {
+				return $status_check;
+			}
+			$params['status'] = $status_check['post_status'];
 		}
 
 		if ( isset( $params['parent_id'] ) ) {
@@ -585,6 +724,10 @@ class Abilities {
 			if ( isset( $taxonomy_check['status'] ) && 'error' === $taxonomy_check['status'] ) {
 				return $taxonomy_check;
 			}
+		}
+
+		if ( ! function_exists( 'wp_insert_post' ) || ! function_exists( 'wp_update_post' ) ) {
+			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
 		$post = $this->content_post_args( $post_type_check['post_type'], $params );
@@ -793,7 +936,7 @@ class Abilities {
 			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
-		$post_type = sanitize_key( $post_type );
+		$post_type = $this->sanitize_key_value( $post_type );
 		$type      = function_exists( 'get_post_type_object' ) ? get_post_type_object( $post_type ) : null;
 		if ( ! $type ) {
 			$types = get_post_types( array(), 'objects' );
@@ -835,6 +978,48 @@ class Abilities {
 	}
 
 	/**
+	 * Validate a post status for content operations.
+	 *
+	 * WordPress registers post statuses globally. Core does not expose a reliable
+	 * status-to-post-type registry, so post-type-specific rules are left to
+	 * wp_insert_post/wp_update_post and any plugin filters they invoke.
+	 *
+	 * @param mixed  $status Status value.
+	 * @param string $context Operation context: query or write.
+	 * @return array<string,mixed>
+	 */
+	private function validate_post_status( $status, $context ) {
+		$status = $this->sanitize_key_value( $status );
+
+		if ( '' === $status ) {
+			return Response::error( 'Post status cannot be empty.', 400 );
+		}
+
+		if ( 'any' === $status ) {
+			if ( 'query' === $context ) {
+				return array( 'post_status' => $status );
+			}
+
+			return Response::error( 'Post status any can only be used when querying content.', 400 );
+		}
+
+		if ( function_exists( 'get_post_status_object' ) && get_post_status_object( $status ) ) {
+			return array( 'post_status' => $status );
+		}
+
+		$statuses = $this->get_registered_post_status_names();
+		if ( $statuses && in_array( $status, $statuses, true ) ) {
+			return array( 'post_status' => $status );
+		}
+
+		if ( $statuses ) {
+			return Response::error( 'Unknown post status: ' . $status, 400 );
+		}
+
+		return array( 'post_status' => $status );
+	}
+
+	/**
 	 * Validate a taxonomy against a post type.
 	 *
 	 * @param array<string,mixed> $post_type_check Post type metadata.
@@ -873,6 +1058,48 @@ class Abilities {
 		}
 
 		return array( 'valid' => true );
+	}
+
+	/**
+	 * Validate a MIME type against the allowed upload MIME type registry.
+	 *
+	 * @param mixed $mime_type MIME type.
+	 * @return array<string,mixed>
+	 */
+	private function validate_mime_type( $mime_type ) {
+		$mime_type = function_exists( 'sanitize_mime_type' ) ? sanitize_mime_type( $mime_type ) : strtolower( trim( (string) $mime_type ) );
+
+		if ( '' === $mime_type ) {
+			return Response::error( 'MIME type cannot be empty.', 400 );
+		}
+
+		$allowed = $this->get_allowed_mime_types();
+		if ( $allowed && ! in_array( $mime_type, $allowed, true ) ) {
+			return Response::error( 'Unsupported MIME type: ' . $mime_type, 400 );
+		}
+
+		return array( 'mime_type' => $mime_type );
+	}
+
+	/**
+	 * Validate a user role when the role registry is available.
+	 *
+	 * @param mixed $role Role slug.
+	 * @return array<string,mixed>
+	 */
+	private function validate_user_role( $role ) {
+		$role = $this->sanitize_key_value( $role );
+
+		if ( '' === $role ) {
+			return Response::error( 'User role cannot be empty.', 400 );
+		}
+
+		$roles = $this->get_editable_role_slugs();
+		if ( $roles && ! in_array( $role, $roles, true ) ) {
+			return Response::error( 'Unknown user role: ' . $role, 400 );
+		}
+
+		return array( 'role' => $role );
 	}
 
 	/**
@@ -1242,6 +1469,14 @@ class Abilities {
 	 * @return mixed
 	 */
 	private function upload_media( $params ) {
+		if ( isset( $params['mime_type'] ) ) {
+			$mime_type_check = $this->validate_mime_type( $params['mime_type'] );
+			if ( isset( $mime_type_check['status'] ) && 'error' === $mime_type_check['status'] ) {
+				return $mime_type_check;
+			}
+			$params['mime_type'] = $mime_type_check['mime_type'];
+		}
+
 		if ( ! function_exists( 'wp_upload_bits' ) || ! function_exists( 'wp_insert_attachment' ) ) {
 			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
@@ -1306,6 +1541,11 @@ class Abilities {
 			'paged'  => isset( $params['page'] ) ? (int) $params['page'] : 1,
 		);
 		if ( isset( $params['role'] ) ) {
+			$role_check = $this->validate_user_role( $params['role'] );
+			if ( isset( $role_check['status'] ) && 'error' === $role_check['status'] ) {
+				return $role_check;
+			}
+			$params['role'] = $role_check['role'];
 			$args['role'] = $params['role'];
 		}
 
@@ -1334,6 +1574,14 @@ class Abilities {
 	 * @return mixed
 	 */
 	private function save_user( $params ) {
+		if ( isset( $params['role'] ) ) {
+			$role_check = $this->validate_user_role( $params['role'] );
+			if ( isset( $role_check['status'] ) && 'error' === $role_check['status'] ) {
+				return $role_check;
+			}
+			$params['role'] = $role_check['role'];
+		}
+
 		if ( isset( $params['id'] ) ) {
 			return $this->update_user( (int) $params['id'], $params );
 		}

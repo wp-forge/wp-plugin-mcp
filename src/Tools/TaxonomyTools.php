@@ -23,35 +23,45 @@ trait TaxonomyTools {
 	 * @return void
 	 */
 	private function add_taxonomy_abilities() {
-		$taxonomy_schema = $this->schema(
+		$taxonomy_schema = function () {
+			return $this->schema(
 			array(
-				'taxonomy' => $this->string_prop( 'Taxonomy name.' ),
+				'taxonomy' => $this->enum_string_prop( 'Registered taxonomy slug.', $this->get_registered_taxonomy_slugs() ),
 			),
 			array( 'taxonomy' )
-		);
-		$term_get_schema = $this->schema(
+			);
+		};
+		$term_get_schema = function () {
+			return $this->schema(
 			array(
-				'taxonomy' => $this->string_prop( 'Taxonomy name.' ),
+				'taxonomy' => $this->enum_string_prop( 'Registered taxonomy slug.', $this->get_registered_taxonomy_slugs() ),
 				'id'       => $this->int_prop( 'Term ID.' ),
 			),
 			array( 'taxonomy', 'id' )
-		);
-		$term_save_schema = $this->schema(
+			);
+		};
+		$term_save_schema = function () {
+			return $this->schema(
 			array(
-				'taxonomy'    => $this->string_prop( 'Taxonomy name.' ),
+				'taxonomy'    => $this->enum_string_prop( 'Registered taxonomy slug.', $this->get_registered_taxonomy_slugs() ),
 				'id'          => $this->int_prop( 'Term ID. Omit to create a new term.' ),
 				'name'        => $this->string_prop( 'Term name.' ),
 				'slug'        => $this->string_prop( 'Term slug.' ),
 				'description' => $this->string_prop( 'Description.' ),
 			),
 			array( 'taxonomy' )
-		);
+			);
+		};
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-taxonomies', 'List Taxonomies', 'List registered WordPress taxonomies', $this->schema(
+		$list_taxonomies_schema = function () {
+			return $this->schema(
 			array(
-				'post_type' => $this->string_prop( 'Filter taxonomies by object type.' ),
+				'post_type' => $this->enum_string_prop( 'Filter taxonomies by registered object type.', $this->get_registered_post_type_slugs() ),
 			)
-		), function ( $params ) {
+			);
+		};
+
+		$this->add_ability( self::INTERNAL_PREFIX . 'list-taxonomies', 'List Taxonomies', 'List registered WordPress taxonomies', $list_taxonomies_schema, function ( $params ) {
 			return $this->list_taxonomies_tool( $params );
 		} );
 
@@ -171,7 +181,7 @@ trait TaxonomyTools {
 			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
-		$taxonomy = sanitize_key( $taxonomy );
+		$taxonomy = $this->sanitize_key_value( $taxonomy );
 		if ( ! taxonomy_exists( $taxonomy ) ) {
 			return Response::error( 'Taxonomy not found: ' . $taxonomy, 404 );
 		}
