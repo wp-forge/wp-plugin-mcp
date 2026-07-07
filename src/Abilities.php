@@ -177,11 +177,7 @@ class Abilities {
 						return function_exists( 'current_user_can' ) ? current_user_can( $capability ) : false;
 					},
 					'meta'                => array(
-						'annotations'  => array(
-							'readonly'    => ! empty( $ability['annotations']['readOnlyHint'] ),
-							'destructive' => empty( $ability['annotations']['readOnlyHint'] ),
-							'idempotent'  => ! empty( $ability['annotations']['readOnlyHint'] ),
-						),
+						'annotations'  => $ability['meta_annotations'],
 						'show_in_rest' => true,
 					),
 				)
@@ -259,16 +255,57 @@ class Abilities {
 	 * @param callable            $callback Callback.
 	 * @param bool                $read_only Whether ability is read-only.
 	 * @param string              $capability Required WordPress capability.
+	 * @param array<string,bool>  $annotations Core ability annotation overrides.
 	 * @return void
 	 */
-	private function add_ability( $name, $label, $description, $input_schema, $callback, $read_only = true, $capability = 'edit_posts' ) {
+	private function add_ability( $name, $label, $description, $input_schema, $callback, $read_only = true, $capability = 'edit_posts', $annotations = array() ) {
+		$core_annotations = $this->core_ability_annotations( $read_only, $annotations );
+
 		$this->abilities[ $name ] = array(
-			'label'        => $label,
-			'description'  => $description,
-			'input_schema' => $input_schema,
-			'callback'     => $callback,
-			'annotations'  => array( 'readOnlyHint' => (bool) $read_only ),
-			'capability'   => $capability,
+			'label'            => $label,
+			'description'      => $description,
+			'input_schema'     => $input_schema,
+			'callback'         => $callback,
+			'annotations'      => $this->mcp_tool_annotations( $core_annotations ),
+			'meta_annotations' => $core_annotations,
+			'capability'       => $capability,
+		);
+	}
+
+	/**
+	 * Build WordPress Abilities API annotations for a tool.
+	 *
+	 * @param bool               $read_only Whether ability is read-only.
+	 * @param array<string,bool> $overrides Annotation overrides.
+	 * @return array<string,bool>
+	 */
+	private function core_ability_annotations( $read_only, $overrides = array() ) {
+		$annotations = array(
+			'readonly'    => (bool) $read_only,
+			'destructive' => false,
+			'idempotent'  => (bool) $read_only,
+		);
+
+		foreach ( array( 'readonly', 'destructive', 'idempotent' ) as $key ) {
+			if ( array_key_exists( $key, $overrides ) ) {
+				$annotations[ $key ] = (bool) $overrides[ $key ];
+			}
+		}
+
+		return $annotations;
+	}
+
+	/**
+	 * Convert core ability annotations to MCP tool hints.
+	 *
+	 * @param array<string,bool> $annotations Core ability annotations.
+	 * @return array<string,bool>
+	 */
+	private function mcp_tool_annotations( $annotations ) {
+		return array(
+			'readOnlyHint'    => ! empty( $annotations['readonly'] ),
+			'destructiveHint' => ! empty( $annotations['destructive'] ),
+			'idempotentHint'  => ! empty( $annotations['idempotent'] ),
 		);
 	}
 

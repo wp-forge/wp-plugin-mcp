@@ -145,6 +145,6 @@ trait ContentManagementTools {
 		}, false );
 		$this->add_ability( self::INTERNAL_PREFIX . 'content-delete', 'Delete Content', 'Delete content from any registered post type', $delete_content_schema, function ( $params ) {
 			return $this->delete_content( $params );
-		}, false );
+		}, false, 'edit_posts', array( 'destructive' => true, 'idempotent' => true ) );
 	}
 }

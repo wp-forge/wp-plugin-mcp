@@ -59,7 +59,7 @@ trait SiteManagementTools {
 		}, false, 'edit_users' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'user-delete', 'Delete User', 'Delete a WordPress user by ID', $user_get_schema, function ( $params ) {
 			return $this->delete_user( (int) $params['id'] );
-		}, false, 'delete_users' );
+		}, false, 'delete_users', array( 'destructive' => true, 'idempotent' => true ) );
 
 		$settings_schema = $this->schema(
 			array(
@@ -78,7 +78,7 @@ trait SiteManagementTools {
 		}, true, 'manage_options' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'general-settings-save', 'Save General Settings', 'Save WordPress general site settings', $settings_schema, function ( $params ) {
 			return $this->update_general_settings( $params );
-		}, false, 'manage_options' );
+		}, false, 'manage_options', array( 'idempotent' => true ) );
 		$this->add_ability( self::INTERNAL_PREFIX . 'site-info-get', 'Get Site Info', 'Get detailed site information', $this->schema(), function () {
 			return $this->get_site_info();
 		} );

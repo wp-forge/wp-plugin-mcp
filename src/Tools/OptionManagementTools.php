@@ -53,11 +53,11 @@ trait OptionManagementTools {
 			array( 'option_name', 'value' )
 		), function ( $params ) {
 			return $this->update_option_tool( $params );
-		}, false, 'manage_options' );
+		}, false, 'manage_options', array( 'idempotent' => true ) );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'option-delete', 'Delete Option', 'Delete a WordPress option by name', $option_schema, function ( $params ) {
 			return $this->delete_option_tool( $params['option_name'] );
-		}, false, 'manage_options' );
+		}, false, 'manage_options', array( 'destructive' => true, 'idempotent' => true ) );
 	}
 
 	/**

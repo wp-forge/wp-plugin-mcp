@@ -45,11 +45,11 @@ trait ThemeManagementTools {
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'theme-activate', 'Activate Theme', 'Activate an installed WordPress theme by stylesheet directory name', $stylesheet_schema, function ( $params ) {
 			return $this->activate_theme_tool( $params['stylesheet'] );
-		}, false, 'switch_themes' );
+		}, false, 'switch_themes', array( 'idempotent' => true ) );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'theme-delete', 'Delete Theme', 'Delete an installed WordPress theme by stylesheet directory name', $stylesheet_schema, function ( $params ) {
 			return $this->delete_theme_tool( $params['stylesheet'] );
-		}, false, 'delete_themes' );
+		}, false, 'delete_themes', array( 'destructive' => true, 'idempotent' => true ) );
 	}
 
 	/**

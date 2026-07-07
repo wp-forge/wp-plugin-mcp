@@ -433,6 +433,13 @@ $site_info_tool = array_values( array_filter( $direct_tools, static function ( $
 assert_true( $site_info_tool['inputSchema']['properties'] instanceof stdClass, 'No-argument tool properties should serialize as a JSON object.' );
 assert_same( true, $site_info_tool['annotations']['readOnlyHint'], 'Read-only tools should use the MCP readOnlyHint annotation.' );
 
+$content_delete_tool = array_values( array_filter( $direct_tools, static function ( $tool ) {
+	return 'wp-forge-content-delete' === $tool['name'];
+} ) )[0];
+assert_same( false, $content_delete_tool['annotations']['readOnlyHint'], 'Delete tools should not use the MCP readOnlyHint annotation.' );
+assert_same( true, $content_delete_tool['annotations']['destructiveHint'], 'Delete tools should use the MCP destructiveHint annotation.' );
+assert_same( true, $content_delete_tool['annotations']['idempotentHint'], 'Delete tools should use the MCP idempotentHint annotation.' );
+
 $missing_plugin_runtime = $abilities->call( 'wp-forge-plugin-list', array() );
 assert_same( 'error', $missing_plugin_runtime['status'], 'Plugin tools should report missing runtime in unit tests.' );
 assert_same( 500, $missing_plugin_runtime['statusCode'], 'Missing WordPress plugin runtime should be a server-side ability error.' );
@@ -471,6 +478,17 @@ assert_true( isset( $registered_abilities['wp-forge/content-search'] ), 'Content
 assert_same( 'Search and filter content for any registered post type', $registered_abilities['wp-forge/content-search']['description'], 'Registered ability should preserve descriptions.' );
 assert_same( true, $registered_abilities['wp-forge/content-search']['meta']['show_in_rest'], 'Registered abilities should be exposed through the Abilities REST API.' );
 assert_same( true, $registered_abilities['wp-forge/content-search']['meta']['annotations']['readonly'], 'Read-only abilities should use core ability annotations.' );
+assert_same( false, $registered_abilities['wp-forge/content-search']['meta']['annotations']['destructive'], 'Read-only abilities should not be marked destructive.' );
+assert_same( true, $registered_abilities['wp-forge/content-search']['meta']['annotations']['idempotent'], 'Read-only abilities should be marked idempotent.' );
+assert_same( false, $registered_abilities['wp-forge/content-save']['meta']['annotations']['readonly'], 'Save abilities should not be marked read-only.' );
+assert_same( false, $registered_abilities['wp-forge/content-save']['meta']['annotations']['destructive'], 'Create-or-update abilities should not be marked destructive by default.' );
+assert_same( false, $registered_abilities['wp-forge/content-save']['meta']['annotations']['idempotent'], 'Create-or-update abilities should not be marked idempotent by default.' );
+assert_same( true, $registered_abilities['wp-forge/content-delete']['meta']['annotations']['destructive'], 'Delete abilities should be marked destructive.' );
+assert_same( true, $registered_abilities['wp-forge/content-delete']['meta']['annotations']['idempotent'], 'Delete abilities should be marked effect-idempotent.' );
+assert_same( true, $registered_abilities['wp-forge/general-settings-save']['meta']['annotations']['idempotent'], 'State-setting save abilities should be marked idempotent.' );
+assert_same( false, $registered_abilities['wp-forge/plugin-activate']['meta']['annotations']['destructive'], 'Activation should not be marked destructive.' );
+assert_same( true, $registered_abilities['wp-forge/plugin-activate']['meta']['annotations']['idempotent'], 'Activation should be marked idempotent.' );
+assert_same( true, $registered_abilities['wp-forge/plugin-uninstall']['meta']['annotations']['destructive'], 'Uninstall should be marked destructive.' );
 assert_same( true, $registered_abilities['wp-forge/content-search']['permission_callback'](), 'Permission callback should allow users with the ability capability.' );
 
 $registered_result = $registered_abilities['wp-forge/content-search']['execute_callback']( array( 'post_type' => 'post' ) );

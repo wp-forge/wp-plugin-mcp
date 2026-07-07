@@ -79,7 +79,7 @@ trait TaxonomyTools {
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'taxonomy-term-delete', 'Delete Taxonomy Term', 'Delete a term from a registered taxonomy', $term_get_schema, function ( $params ) {
 			return $this->delete_term( $params['taxonomy'], (int) $params['id'] );
-		}, false, 'manage_categories' );
+		}, false, 'manage_categories', array( 'destructive' => true, 'idempotent' => true ) );
 	}
 
 	/**
