@@ -302,62 +302,62 @@ $all       = $abilities->list_abilities();
 $names     = array_column( $all, 'name' );
 
 assert_same( 53, count( $all ), 'Expected the WordPress ability catalog.' );
-assert_true( in_array( 'wp-forge-search-content', $names, true ), 'Expected content search ability.' );
-assert_true( in_array( 'wp-forge-get-site-info', $names, true ), 'Expected site info ability.' );
-assert_true( in_array( 'wp-forge-run-api-function', $names, true ), 'Expected REST runner ability.' );
+assert_true( in_array( 'wp-forge-content-search', $names, true ), 'Expected content search ability.' );
+assert_true( in_array( 'wp-forge-site-info-get', $names, true ), 'Expected site info ability.' );
+assert_true( in_array( 'wp-forge-api-function-run', $names, true ), 'Expected REST runner ability.' );
 assert_true( ! in_array( 'wp-forge-wc-products-search', $names, true ), 'WooCommerce abilities should not be registered.' );
 
 $expected_named_tools = array(
-	'wp-forge-list-post-types',
-	'wp-forge-search-content',
-	'wp-forge-get-content',
-	'wp-forge-save-content',
-	'wp-forge-delete-content',
-	'wp-forge-list-taxonomies',
-	'wp-forge-list-taxonomy-terms',
-	'wp-forge-get-taxonomy-term',
-	'wp-forge-save-taxonomy-term',
-	'wp-forge-delete-taxonomy-term',
-	'wp-forge-list-media',
-	'wp-forge-get-media',
-	'wp-forge-get-media-file',
-	'wp-forge-upload-media',
-	'wp-forge-update-media',
-	'wp-forge-delete-media',
-	'wp-forge-search-media',
-	'wp-forge-users-search',
-	'wp-forge-get-user',
-	'wp-forge-save-user',
-	'wp-forge-delete-user',
-	'wp-forge-get-general-settings',
-	'wp-forge-save-general-settings',
-	'wp-forge-get-site-info',
-	'wp-forge-list-plugins',
-	'wp-forge-install-plugin',
-	'wp-forge-activate-plugin',
-	'wp-forge-deactivate-plugin',
-	'wp-forge-uninstall-plugin',
-	'wp-forge-list-themes',
-	'wp-forge-install-theme',
-	'wp-forge-activate-theme',
-	'wp-forge-delete-theme',
-	'wp-forge-list-options',
-	'wp-forge-get-option',
-	'wp-forge-save-option',
-	'wp-forge-delete-option',
-	'wp-forge-list-comments',
-	'wp-forge-get-comment',
-	'wp-forge-save-comment',
-	'wp-forge-delete-comment',
-	'wp-forge-get-site-health-info',
-	'wp-forge-list-site-health-tests',
-	'wp-forge-read-error-log',
-	'wp-forge-run-wp-cli-command',
-	'wp-forge-get-global-styles',
-	'wp-forge-update-global-styles',
-	'wp-forge-get-active-global-styles',
-	'wp-forge-get-active-global-styles-id',
-	'wp-forge-get-active-theme',
+	'wp-forge-post-type-list',
+	'wp-forge-content-search',
+	'wp-forge-content-get',
+	'wp-forge-content-save',
+	'wp-forge-content-delete',
+	'wp-forge-taxonomy-list',
+	'wp-forge-taxonomy-term-list',
+	'wp-forge-taxonomy-term-get',
+	'wp-forge-taxonomy-term-save',
+	'wp-forge-taxonomy-term-delete',
+	'wp-forge-media-list',
+	'wp-forge-media-get',
+	'wp-forge-media-file-get',
+	'wp-forge-media-upload',
+	'wp-forge-media-update',
+	'wp-forge-media-delete',
+	'wp-forge-media-search',
+	'wp-forge-user-search',
+	'wp-forge-user-get',
+	'wp-forge-user-save',
+	'wp-forge-user-delete',
+	'wp-forge-general-settings-get',
+	'wp-forge-general-settings-save',
+	'wp-forge-site-info-get',
+	'wp-forge-plugin-list',
+	'wp-forge-plugin-install',
+	'wp-forge-plugin-activate',
+	'wp-forge-plugin-deactivate',
+	'wp-forge-plugin-uninstall',
+	'wp-forge-theme-list',
+	'wp-forge-theme-install',
+	'wp-forge-theme-activate',
+	'wp-forge-theme-delete',
+	'wp-forge-option-list',
+	'wp-forge-option-get',
+	'wp-forge-option-save',
+	'wp-forge-option-delete',
+	'wp-forge-comment-list',
+	'wp-forge-comment-get',
+	'wp-forge-comment-save',
+	'wp-forge-comment-delete',
+	'wp-forge-site-health-info-get',
+	'wp-forge-site-health-test-list',
+	'wp-forge-error-log-read',
+	'wp-forge-wp-cli-command-run',
+	'wp-forge-global-styles-get',
+	'wp-forge-global-styles-update',
+	'wp-forge-global-styles-active-get',
+	'wp-forge-global-styles-active-id-get',
+	'wp-forge-theme-active-get',
 );
 
 foreach ( $expected_named_tools as $expected_name ) {
@@ -369,87 +369,87 @@ foreach ( $names as $name ) {
 	assert_true( false === strpos( $name, 'woocommerce-' ), 'WooCommerce-native tools should not be exposed.' );
 }
 
-$filtered = $abilities->list_abilities( array( 'name_prefix' => 'wp-forge-search' ) );
-assert_same( array( 'wp-forge-search-content', 'wp-forge-search-media' ), array_column( $filtered, 'name' ), 'Prefix filtering should find search tools.' );
+$filtered = $abilities->list_abilities( array( 'name_prefix' => 'wp-forge-content-' ) );
+assert_same( array( 'wp-forge-content-search', 'wp-forge-content-get', 'wp-forge-content-save', 'wp-forge-content-delete' ), array_column( $filtered, 'name' ), 'Prefix filtering should find content tools.' );
 
-$schema = $abilities->get_schema( 'wp-forge-save-content' );
-assert_same( 'wp-forge-save-content', $schema['name'], 'Schema lookup should accept MCP tool names.' );
+$schema = $abilities->get_schema( 'wp-forge-content-save' );
+assert_same( 'wp-forge-content-save', $schema['name'], 'Schema lookup should accept MCP tool names.' );
 assert_same( false, $schema['annotations']['readOnlyHint'], 'Save content should be marked writable.' );
 assert_true( in_array( 'mcp_movie', $schema['input_schema']['properties']['post_type']['enum'], true ), 'Save content schema should include post types registered after ability construction.' );
 assert_true( in_array( 'mcp-reviewing', $schema['input_schema']['properties']['status']['enum'], true ), 'Save content schema should include custom post statuses.' );
 assert_true( in_array( 'mcp-late-review', $schema['input_schema']['properties']['status']['enum'], true ), 'Save content schema should resolve post statuses lazily.' );
 
-$search_schema = $abilities->get_schema( 'wp-forge-search-content' );
+$search_schema = $abilities->get_schema( 'wp-forge-content-search' );
 assert_true( in_array( 'any', $search_schema['input_schema']['properties']['status']['enum'], true ), 'Search content schema should expose the WordPress any pseudo-status.' );
 assert_true( in_array( 'mcp_genre', $search_schema['input_schema']['properties']['taxonomy_query']['properties']['taxonomy']['enum'], true ), 'Search content schema should include custom taxonomies.' );
 
-$taxonomy_schema = $abilities->get_schema( 'wp-forge-save-taxonomy-term' );
+$taxonomy_schema = $abilities->get_schema( 'wp-forge-taxonomy-term-save' );
 assert_true( in_array( 'mcp_genre', $taxonomy_schema['input_schema']['properties']['taxonomy']['enum'], true ), 'Taxonomy term schema should include plugin-registered taxonomies.' );
 
-$user_schema = $abilities->get_schema( 'wp-forge-save-user' );
+$user_schema = $abilities->get_schema( 'wp-forge-user-save' );
 assert_true( in_array( 'mcp_manager', $user_schema['input_schema']['properties']['role']['enum'], true ), 'User schema should include custom editable roles.' );
 
-$media_schema = $abilities->get_schema( 'wp-forge-upload-media' );
+$media_schema = $abilities->get_schema( 'wp-forge-media-upload' );
 assert_true( in_array( 'application/x-mcp-test', $media_schema['input_schema']['properties']['mime_type']['enum'], true ), 'Media schema should include custom allowed MIME types.' );
 
-$comment_schema = $abilities->get_schema( 'wp-forge-save-comment' );
+$comment_schema = $abilities->get_schema( 'wp-forge-comment-save' );
 assert_true( ! isset( $comment_schema['input_schema']['properties']['status']['enum'] ), 'Comment status schema should stay flexible when custom statuses cannot be reliably discovered.' );
 
-$invalid_search_status = $abilities->call( 'wp-forge-search-content', array( 'post_type' => 'post', 'status' => 'mcp-missing-status' ) );
+$invalid_search_status = $abilities->call( 'wp-forge-content-search', array( 'post_type' => 'post', 'status' => 'mcp-missing-status' ) );
 assert_same( 'error', $invalid_search_status['status'], 'Search content should reject unknown post statuses before querying.' );
 assert_same( 400, $invalid_search_status['statusCode'], 'Unknown query post statuses should be a client error.' );
 
-$invalid_save_status = $abilities->call( 'wp-forge-save-content', array( 'post_type' => 'post', 'title' => 'Invalid status', 'status' => 'mcp-missing-status' ) );
+$invalid_save_status = $abilities->call( 'wp-forge-content-save', array( 'post_type' => 'post', 'title' => 'Invalid status', 'status' => 'mcp-missing-status' ) );
 assert_same( 'error', $invalid_save_status['status'], 'Save content should reject unknown post statuses before writing.' );
 assert_same( 400, $invalid_save_status['statusCode'], 'Unknown write post statuses should be a client error.' );
 
-$invalid_any_save_status = $abilities->call( 'wp-forge-save-content', array( 'post_type' => 'post', 'title' => 'Invalid status', 'status' => 'any' ) );
+$invalid_any_save_status = $abilities->call( 'wp-forge-content-save', array( 'post_type' => 'post', 'title' => 'Invalid status', 'status' => 'any' ) );
 assert_same( 'error', $invalid_any_save_status['status'], 'Save content should reject the any pseudo-status.' );
 assert_same( 400, $invalid_any_save_status['statusCode'], 'The any pseudo-status should be rejected for writes.' );
 
-$invalid_role = $abilities->call( 'wp-forge-save-user', array( 'username' => 'bad_role', 'email' => 'bad-role@example.com', 'password' => 'password', 'role' => 'mcp_missing_role' ) );
+$invalid_role = $abilities->call( 'wp-forge-user-save', array( 'username' => 'bad_role', 'email' => 'bad-role@example.com', 'password' => 'password', 'role' => 'mcp_missing_role' ) );
 assert_same( 'error', $invalid_role['status'], 'Save user should reject unknown roles before writing.' );
 assert_same( 400, $invalid_role['statusCode'], 'Unknown roles should be a client error.' );
 
-$invalid_mime = $abilities->call( 'wp-forge-upload-media', array( 'filename' => 'bad.bin', 'base64' => base64_encode( 'bad' ), 'mime_type' => 'application/x-missing-mcp' ) );
+$invalid_mime = $abilities->call( 'wp-forge-media-upload', array( 'filename' => 'bad.bin', 'base64' => base64_encode( 'bad' ), 'mime_type' => 'application/x-missing-mcp' ) );
 assert_same( 'error', $invalid_mime['status'], 'Upload media should reject unsupported MIME types before writing.' );
 assert_same( 400, $invalid_mime['statusCode'], 'Unsupported MIME types should be a client error.' );
 
-$post_types_schema = $abilities->get_schema( 'wp-forge-list-post-types' );
+$post_types_schema = $abilities->get_schema( 'wp-forge-post-type-list' );
 assert_same( 'boolean', $post_types_schema['input_schema']['properties']['public']['type'], 'Post type list should expose public filtering.' );
 
 $direct_tools = $abilities->list_tools();
 $direct_tool_names = array_column( $direct_tools, 'name' );
 assert_same( 53, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
-assert_true( in_array( 'wp-forge-search-content', $direct_tool_names, true ), 'Direct tool list should include content search.' );
-assert_true( in_array( 'wp-forge-get-active-theme', $direct_tool_names, true ), 'Direct tool list should include active theme.' );
+assert_true( in_array( 'wp-forge-content-search', $direct_tool_names, true ), 'Direct tool list should include content search.' );
+assert_true( in_array( 'wp-forge-theme-active-get', $direct_tool_names, true ), 'Direct tool list should include active theme.' );
 assert_true( ! in_array( 'wp-forge-list-abilities', $direct_tool_names, true ), 'Gateway list tool should not be exposed.' );
 assert_true( ! in_array( 'wp-forge-get-ability-schema', $direct_tool_names, true ), 'Gateway schema tool should not be exposed.' );
 assert_true( ! in_array( 'wp-forge-call-ability', $direct_tool_names, true ), 'Gateway call tool should not be exposed.' );
 
 $site_info_tool = array_values( array_filter( $direct_tools, static function ( $tool ) {
-	return 'wp-forge-get-site-info' === $tool['name'];
+	return 'wp-forge-site-info-get' === $tool['name'];
 } ) )[0];
 assert_true( $site_info_tool['inputSchema']['properties'] instanceof stdClass, 'No-argument tool properties should serialize as a JSON object.' );
 assert_same( true, $site_info_tool['annotations']['readOnlyHint'], 'Read-only tools should use the MCP readOnlyHint annotation.' );
 
-$missing_plugin_runtime = $abilities->call( 'wp-forge-list-plugins', array() );
+$missing_plugin_runtime = $abilities->call( 'wp-forge-plugin-list', array() );
 assert_same( 'error', $missing_plugin_runtime['status'], 'Plugin tools should report missing runtime in unit tests.' );
 assert_same( 500, $missing_plugin_runtime['statusCode'], 'Missing WordPress plugin runtime should be a server-side ability error.' );
 
-$missing_theme_runtime = $abilities->call( 'wp-forge-list-themes', array() );
+$missing_theme_runtime = $abilities->call( 'wp-forge-theme-list', array() );
 assert_same( 'error', $missing_theme_runtime['status'], 'Theme tools should report missing runtime in unit tests.' );
 assert_same( 500, $missing_theme_runtime['statusCode'], 'Missing WordPress runtime should be a server-side ability error.' );
 
-$disabled_wp_cli = $abilities->call( 'wp-forge-run-wp-cli-command', array( 'args' => array( 'plugin', 'list' ) ) );
+$disabled_wp_cli = $abilities->call( 'wp-forge-wp-cli-command-run', array( 'args' => array( 'plugin', 'list' ) ) );
 assert_same( 'error', $disabled_wp_cli['status'], 'WP-CLI tool should be disabled by default.' );
 assert_same( 403, $disabled_wp_cli['statusCode'], 'Disabled WP-CLI tool should return a permission-style error.' );
 
-$missing_runtime = $abilities->call( 'wp-forge-search-content', array( 'post_type' => 'post' ) );
+$missing_runtime = $abilities->call( 'wp-forge-content-search', array( 'post_type' => 'post' ) );
 assert_same( 'error', $missing_runtime['status'], 'WordPress-dependent ability should report missing runtime in unit tests.' );
 assert_same( 500, $missing_runtime['statusCode'], 'Missing WordPress runtime should be a server-side ability error.' );
 
-$post_types = $abilities->call( 'wp-forge-list-post-types', array() );
+$post_types = $abilities->call( 'wp-forge-post-type-list', array() );
 assert_same( 'success', $post_types['status'], 'Post type list should use the available WordPress runtime.' );
 assert_same( array( 'post_types' ), array_keys( $post_types['message'] ), 'Post type list should return a structured envelope.' );
 assert_same( 'post', $post_types['message']['post_types'][0]['slug'], 'Post type list should expose slugs.' );
@@ -458,22 +458,22 @@ assert_same( array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'commen
 assert_same( array( 'category', 'post_tag' ), $post_types['message']['post_types'][0]['taxonomies'], 'Post type list should expose supported taxonomies.' );
 assert_same( 'posts', $post_types['message']['post_types'][0]['rest_base'], 'Post type list should expose REST base.' );
 
-$public_hierarchical_post_types = $abilities->call( 'wp-forge-list-post-types', array( 'public' => true, 'hierarchical' => true ) );
+$public_hierarchical_post_types = $abilities->call( 'wp-forge-post-type-list', array( 'public' => true, 'hierarchical' => true ) );
 assert_same( array( 'page' ), array_column( $public_hierarchical_post_types['message']['post_types'], 'slug' ), 'Post type list should pass filters through to get_post_types().' );
 
 $wp_ability_names = $abilities->get_wordpress_ability_names();
 assert_same( 53, count( $wp_ability_names ), 'Expected all abilities to be available for the MCP adapter.' );
-assert_true( in_array( 'wp-forge/search-content', $wp_ability_names, true ), 'Adapter ability list should use WordPress ability names.' );
+assert_true( in_array( 'wp-forge/content-search', $wp_ability_names, true ), 'Adapter ability list should use WordPress ability names.' );
 
 $abilities->register_wordpress_abilities();
 assert_same( 53, count( $registered_abilities ), 'Expected every ability to be registered with the WordPress Abilities API.' );
-assert_true( isset( $registered_abilities['wp-forge/search-content'] ), 'Content search should be registered with the WordPress Abilities API.' );
-assert_same( 'Search and filter content for any registered post type', $registered_abilities['wp-forge/search-content']['description'], 'Registered ability should preserve descriptions.' );
-assert_same( true, $registered_abilities['wp-forge/search-content']['meta']['show_in_rest'], 'Registered abilities should be exposed through the Abilities REST API.' );
-assert_same( true, $registered_abilities['wp-forge/search-content']['meta']['annotations']['readonly'], 'Read-only abilities should use core ability annotations.' );
-assert_same( true, $registered_abilities['wp-forge/search-content']['permission_callback'](), 'Permission callback should allow users with the ability capability.' );
+assert_true( isset( $registered_abilities['wp-forge/content-search'] ), 'Content search should be registered with the WordPress Abilities API.' );
+assert_same( 'Search and filter content for any registered post type', $registered_abilities['wp-forge/content-search']['description'], 'Registered ability should preserve descriptions.' );
+assert_same( true, $registered_abilities['wp-forge/content-search']['meta']['show_in_rest'], 'Registered abilities should be exposed through the Abilities REST API.' );
+assert_same( true, $registered_abilities['wp-forge/content-search']['meta']['annotations']['readonly'], 'Read-only abilities should use core ability annotations.' );
+assert_same( true, $registered_abilities['wp-forge/content-search']['permission_callback'](), 'Permission callback should allow users with the ability capability.' );
 
-$registered_result = $registered_abilities['wp-forge/search-content']['execute_callback']( array( 'post_type' => 'post' ) );
+$registered_result = $registered_abilities['wp-forge/content-search']['execute_callback']( array( 'post_type' => 'post' ) );
 assert_same( 'error', $registered_result['status'], 'Registered ability callback should dispatch to the catalog.' );
 assert_same( 500, $registered_result['statusCode'], 'Registered ability callback should return the ability response.' );
 
@@ -498,6 +498,6 @@ assert_same( 'mcp', $adapter->args[1], 'Adapter server should keep the existing 
 assert_same( 'wp-forge', $adapter->args[2], 'Adapter server should keep the existing REST route.' );
 assert_same( 'WordPress MCP', $adapter->args[3], 'Adapter server should preserve the server name.' );
 assert_same( 53, count( $adapter->args[9] ), 'Adapter server should expose every registered ability.' );
-assert_true( in_array( 'wp-forge/search-content', $adapter->args[9], true ), 'Adapter server should expose content search.' );
+assert_true( in_array( 'wp-forge/content-search', $adapter->args[9], true ), 'Adapter server should expose content search.' );
 
 echo 'Tests passed: ' . $tests_run . PHP_EOL;

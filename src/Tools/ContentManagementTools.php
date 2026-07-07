@@ -131,19 +131,19 @@ trait ContentManagementTools {
 			);
 		};
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-post-types', 'List Post Types', 'List registered WordPress post types with runtime validation metadata', $list_post_types_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'post-type-list', 'List Post Types', 'List registered WordPress post types with runtime validation metadata', $list_post_types_schema, function ( $params ) {
 			return $this->list_post_types( $params );
 		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'search-content', 'Search Content', 'Search and filter content for any registered post type', $search_content_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'content-search', 'Search Content', 'Search and filter content for any registered post type', $search_content_schema, function ( $params ) {
 			return $this->search_content( $params );
 		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-content', 'Get Content', 'Get a content item from any registered post type by ID or slug', $content_id_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'content-get', 'Get Content', 'Get a content item from any registered post type by ID or slug', $content_id_schema, function ( $params ) {
 			return $this->get_content( $params );
 		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'save-content', 'Save Content', 'Create or update content for any registered post type', $save_content_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'content-save', 'Save Content', 'Create or update content for any registered post type', $save_content_schema, function ( $params ) {
 			return $this->save_content( $params );
 		}, false );
-		$this->add_ability( self::INTERNAL_PREFIX . 'delete-content', 'Delete Content', 'Delete content from any registered post type', $delete_content_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'content-delete', 'Delete Content', 'Delete content from any registered post type', $delete_content_schema, function ( $params ) {
 			return $this->delete_content( $params );
 		}, false );
 	}

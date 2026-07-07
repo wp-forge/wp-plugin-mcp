@@ -21,7 +21,7 @@ trait RestCatalogTools {
 	 * @return void
 	 */
 	private function add_rest_catalog_abilities() {
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-api-functions', 'List API Functions', 'List available WordPress REST API endpoints that support CRUD', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'api-function-list', 'List API Functions', 'List available WordPress REST API endpoints that support CRUD', $this->schema(
 			array(
 				'namespace' => $this->string_prop( 'REST namespace, such as wp/v2.' ),
 				'methods'   => array(
@@ -34,7 +34,7 @@ trait RestCatalogTools {
 		), function ( $params ) {
 			return $this->list_api_functions( $params );
 		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-function-details', 'Get Function Details', 'Get detailed metadata for a specific REST API route and HTTP method', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'api-function-details-get', 'Get Function Details', 'Get detailed metadata for a specific REST API route and HTTP method', $this->schema(
 			array(
 				'route'  => $this->string_prop( 'REST route.' ),
 				'method' => $this->string_prop( 'HTTP method.' ),
@@ -43,7 +43,7 @@ trait RestCatalogTools {
 		), function ( $params ) {
 			return $this->get_function_details( $params['route'], $params['method'] );
 		} );
-		$this->add_ability( self::INTERNAL_PREFIX . 'run-api-function', 'Run API Function', 'Execute a REST API request by route, method, and parameters', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'api-function-run', 'Run API Function', 'Execute a REST API request by route, method, and parameters', $this->schema(
 			array(
 				'route'      => $this->string_prop( 'REST route.' ),
 				'method'     => $this->string_prop( 'HTTP method.' ),

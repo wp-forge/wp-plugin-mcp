@@ -29,12 +29,11 @@ trait PluginManagementTools {
 			),
 			array( 'plugin_file' )
 		);
-
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-plugins', 'List Plugins', 'List installed WordPress plugins and their activation state', $this->schema(), function () {
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-list', 'List Plugins', 'List installed WordPress plugins and their activation state', $this->schema(), function () {
 			return $this->list_plugins();
 		}, true, 'activate_plugins' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'install-plugin', 'Install Plugin', 'Install a WordPress plugin from the WordPress.org plugin directory by slug', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-install', 'Install Plugin', 'Install a WordPress plugin from the WordPress.org plugin directory by slug', $this->schema(
 			array(
 				'slug' => $this->string_prop( 'WordPress.org plugin slug, such as akismet.' ),
 			),
@@ -43,15 +42,15 @@ trait PluginManagementTools {
 			return $this->install_plugin( $params['slug'] );
 		}, false, 'install_plugins' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'activate-plugin', 'Activate Plugin', 'Activate an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-activate', 'Activate Plugin', 'Activate an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
 			return $this->activate_plugin_tool( $params['plugin_file'] );
 		}, false, 'activate_plugins' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'deactivate-plugin', 'Deactivate Plugin', 'Deactivate an active WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-deactivate', 'Deactivate Plugin', 'Deactivate an active WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
 			return $this->deactivate_plugin_tool( $params['plugin_file'] );
 		}, false, 'activate_plugins' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'uninstall-plugin', 'Uninstall Plugin', 'Deactivate and delete an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-uninstall', 'Uninstall Plugin', 'Deactivate and delete an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
 			return $this->uninstall_plugin( $params['plugin_file'] );
 		}, false, 'delete_plugins' );
 	}

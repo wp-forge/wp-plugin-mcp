@@ -30,7 +30,7 @@ trait OptionManagementTools {
 			array( 'option_name' )
 		);
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-options', 'List Options', 'List WordPress options by search or prefix', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'option-list', 'List Options', 'List WordPress options by search or prefix', $this->schema(
 			array(
 				'search'      => $this->string_prop( 'Search term for option names.' ),
 				'name_prefix' => $this->string_prop( 'Option name prefix.' ),
@@ -40,11 +40,11 @@ trait OptionManagementTools {
 			return $this->list_options( $params );
 		}, true, 'manage_options' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-option', 'Get Option', 'Get a WordPress option value by name', $option_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'option-get', 'Get Option', 'Get a WordPress option value by name', $option_schema, function ( $params ) {
 			return $this->get_option_tool( $params['option_name'] );
 		}, true, 'manage_options' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'save-option', 'Save Option', 'Create or update a WordPress option value by name', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'option-save', 'Save Option', 'Create or update a WordPress option value by name', $this->schema(
 			array(
 				'option_name' => $this->string_prop( 'Option name.' ),
 				'value'       => array( 'description' => 'Option value.', 'type' => array( 'string', 'number', 'integer', 'boolean', 'array', 'object', 'null' ) ),
@@ -55,7 +55,7 @@ trait OptionManagementTools {
 			return $this->update_option_tool( $params );
 		}, false, 'manage_options' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'delete-option', 'Delete Option', 'Delete a WordPress option by name', $option_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'option-delete', 'Delete Option', 'Delete a WordPress option by name', $option_schema, function ( $params ) {
 			return $this->delete_option_tool( $params['option_name'] );
 		}, false, 'manage_options' );
 	}

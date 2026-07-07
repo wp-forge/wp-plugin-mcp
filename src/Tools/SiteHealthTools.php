@@ -23,11 +23,11 @@ trait SiteHealthTools {
 	 * @return void
 	 */
 	private function add_site_health_abilities() {
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-site-health-info', 'Get Site Health Info', 'Get WordPress Site Health debug information', $this->schema(), function () {
+		$this->add_ability( self::INTERNAL_PREFIX . 'site-health-info-get', 'Get Site Health Info', 'Get WordPress Site Health debug information', $this->schema(), function () {
 			return $this->get_site_health_info();
 		}, true, 'view_site_health_checks' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-site-health-tests', 'List Site Health Tests', 'List available WordPress Site Health tests', $this->schema(), function () {
+		$this->add_ability( self::INTERNAL_PREFIX . 'site-health-test-list', 'List Site Health Tests', 'List available WordPress Site Health tests', $this->schema(), function () {
 			return $this->list_site_health_tests();
 		}, true, 'view_site_health_checks' );
 	}

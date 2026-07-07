@@ -30,11 +30,11 @@ trait ThemeManagementTools {
 			array( 'stylesheet' )
 		);
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-themes', 'List Themes', 'List installed WordPress themes and their activation state', $this->schema(), function () {
+		$this->add_ability( self::INTERNAL_PREFIX . 'theme-list', 'List Themes', 'List installed WordPress themes and their activation state', $this->schema(), function () {
 			return $this->list_themes();
 		}, true, 'switch_themes' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'install-theme', 'Install Theme', 'Install a WordPress theme from the WordPress.org theme directory by slug', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'theme-install', 'Install Theme', 'Install a WordPress theme from the WordPress.org theme directory by slug', $this->schema(
 			array(
 				'slug' => $this->string_prop( 'WordPress.org theme slug, such as twentytwentyfive.' ),
 			),
@@ -43,11 +43,11 @@ trait ThemeManagementTools {
 			return $this->install_theme( $params['slug'] );
 		}, false, 'install_themes' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'activate-theme', 'Activate Theme', 'Activate an installed WordPress theme by stylesheet directory name', $stylesheet_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'theme-activate', 'Activate Theme', 'Activate an installed WordPress theme by stylesheet directory name', $stylesheet_schema, function ( $params ) {
 			return $this->activate_theme_tool( $params['stylesheet'] );
 		}, false, 'switch_themes' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'delete-theme', 'Delete Theme', 'Delete an installed WordPress theme by stylesheet directory name', $stylesheet_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'theme-delete', 'Delete Theme', 'Delete an installed WordPress theme by stylesheet directory name', $stylesheet_schema, function ( $params ) {
 			return $this->delete_theme_tool( $params['stylesheet'] );
 		}, false, 'delete_themes' );
 	}

@@ -677,7 +677,7 @@ class Abilities {
 		} elseif ( ! empty( $params['slug'] ) ) {
 			$item = $this->get_content_item_by_slug( $post_type_check['post_type'], (string) $params['slug'] );
 		} else {
-			return Response::error( 'get-content requires either id or slug.', 400 );
+			return Response::error( 'content_get requires either id or slug.', 400 );
 		}
 
 		if ( isset( $item['status'] ) && 'error' === $item['status'] ) {
@@ -701,7 +701,7 @@ class Abilities {
 
 		$is_update = isset( $params['id'] );
 		if ( ! $is_update && ( ! isset( $params['title'] ) || '' === trim( (string) $params['title'] ) ) ) {
-			return Response::error( 'save-content requires title when creating content.', 400 );
+			return Response::error( 'content_save requires title when creating content.', 400 );
 		}
 
 		if ( isset( $params['status'] ) ) {
@@ -1588,7 +1588,7 @@ class Abilities {
 
 		foreach ( array( 'username', 'email', 'password' ) as $required ) {
 			if ( ! isset( $params[ $required ] ) || '' === (string) $params[ $required ] ) {
-				return Response::error( 'save-user requires ' . $required . ' when creating a user.', 400 );
+				return Response::error( 'user_save requires ' . $required . ' when creating a user.', 400 );
 			}
 		}
 

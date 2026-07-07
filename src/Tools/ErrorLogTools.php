@@ -23,7 +23,7 @@ trait ErrorLogTools {
 	 * @return void
 	 */
 	private function add_error_log_abilities() {
-		$this->add_ability( self::INTERNAL_PREFIX . 'read-error-log', 'Read Error Log', 'Read the tail of the WordPress debug log', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'error-log-read', 'Read Error Log', 'Read the tail of the WordPress debug log', $this->schema(
 			array(
 				'lines' => $this->int_prop( 'Number of log lines to return.', 200 ),
 			)
