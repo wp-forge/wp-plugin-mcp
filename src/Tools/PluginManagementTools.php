@@ -44,15 +44,15 @@ trait PluginManagementTools {
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-activate', 'Activate Plugin', 'Activate an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
 			return $this->activate_plugin_tool( $params['plugin_file'] );
-		}, false, 'activate_plugins' );
+		}, false, 'activate_plugins', array( 'idempotent' => true ) );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-deactivate', 'Deactivate Plugin', 'Deactivate an active WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
 			return $this->deactivate_plugin_tool( $params['plugin_file'] );
-		}, false, 'activate_plugins' );
+		}, false, 'activate_plugins', array( 'idempotent' => true ) );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'plugin-uninstall', 'Uninstall Plugin', 'Deactivate and delete an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
 			return $this->uninstall_plugin( $params['plugin_file'] );
-		}, false, 'delete_plugins' );
+		}, false, 'delete_plugins', array( 'destructive' => true, 'idempotent' => true ) );
 	}
 
 	/**

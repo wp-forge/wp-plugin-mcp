@@ -56,7 +56,7 @@ trait CommentManagementTools {
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'comment-delete', 'Delete Comment', 'Delete a WordPress comment by ID', $id_schema, function ( $params ) {
 			return $this->delete_comment_tool( (int) $params['id'] );
-		}, false, 'moderate_comments' );
+		}, false, 'moderate_comments', array( 'destructive' => true, 'idempotent' => true ) );
 	}
 
 	/**
