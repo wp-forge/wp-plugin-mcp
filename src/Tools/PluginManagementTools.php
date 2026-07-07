@@ -29,12 +29,23 @@ trait PluginManagementTools {
 			),
 			array( 'plugin_file' )
 		);
+		$plugin_status_schema = $this->schema(
+			array(
+				'plugin_file' => $this->string_prop( 'Installed plugin file path.' ),
+				'status'      => array(
+					'type'        => 'string',
+					'description' => 'Desired plugin status.',
+					'enum'        => array( 'active', 'inactive' ),
+				),
+			),
+			array( 'plugin_file', 'status' )
+		);
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-plugins', 'List Plugins', 'List installed WordPress plugins and their activation state', $this->schema(), function () {
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin_list', 'List Plugins', 'List installed WordPress plugins and their activation state', $this->schema(), function () {
 			return $this->list_plugins();
 		}, true, 'activate_plugins' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'install-plugin', 'Install Plugin', 'Install a WordPress plugin from the WordPress.org plugin directory by slug', $this->schema(
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin_install', 'Install Plugin', 'Install a WordPress plugin from the WordPress.org plugin directory by slug', $this->schema(
 			array(
 				'slug' => $this->string_prop( 'WordPress.org plugin slug, such as akismet.' ),
 			),
@@ -43,15 +54,11 @@ trait PluginManagementTools {
 			return $this->install_plugin( $params['slug'] );
 		}, false, 'install_plugins' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'activate-plugin', 'Activate Plugin', 'Activate an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
-			return $this->activate_plugin_tool( $params['plugin_file'] );
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin_set_status', 'Set Plugin Status', 'Activate or deactivate an installed WordPress plugin by plugin file path', $plugin_status_schema, function ( $params ) {
+			return $this->set_plugin_status( $params['plugin_file'], $params['status'] );
 		}, false, 'activate_plugins' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'deactivate-plugin', 'Deactivate Plugin', 'Deactivate an active WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
-			return $this->deactivate_plugin_tool( $params['plugin_file'] );
-		}, false, 'activate_plugins' );
-
-		$this->add_ability( self::INTERNAL_PREFIX . 'uninstall-plugin', 'Uninstall Plugin', 'Deactivate and delete an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'plugin_uninstall', 'Uninstall Plugin', 'Deactivate and delete an installed WordPress plugin by plugin file path', $plugin_file_schema, function ( $params ) {
 			return $this->uninstall_plugin( $params['plugin_file'] );
 		}, false, 'delete_plugins' );
 	}
@@ -193,6 +200,27 @@ trait PluginManagementTools {
 			'plugin_file' => $plugin_file,
 			'active'      => is_plugin_active( $plugin_file ),
 		);
+	}
+
+	/**
+	 * Set plugin activation status.
+	 *
+	 * @param string $plugin_file Plugin file path.
+	 * @param string $status Desired status.
+	 * @return array<string,mixed>
+	 */
+	private function set_plugin_status( $plugin_file, $status ) {
+		$status = strtolower( (string) $status );
+
+		if ( 'active' === $status ) {
+			return $this->activate_plugin_tool( $plugin_file );
+		}
+
+		if ( 'inactive' === $status ) {
+			return $this->deactivate_plugin_tool( $plugin_file );
+		}
+
+		return Response::error( 'Unsupported plugin status: ' . $status, 400 );
 	}
 
 	/**

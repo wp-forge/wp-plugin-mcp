@@ -61,23 +61,23 @@ trait TaxonomyTools {
 			);
 		};
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-taxonomies', 'List Taxonomies', 'List registered WordPress taxonomies', $list_taxonomies_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'taxonomy_list', 'List Taxonomies', 'List registered WordPress taxonomies', $list_taxonomies_schema, function ( $params ) {
 			return $this->list_taxonomies_tool( $params );
 		} );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'list-taxonomy-terms', 'List Taxonomy Terms', 'List terms for a registered taxonomy', $taxonomy_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'taxonomy_term_list', 'List Taxonomy Terms', 'List terms for a registered taxonomy', $taxonomy_schema, function ( $params ) {
 			return $this->list_taxonomy_terms_tool( $params['taxonomy'] );
 		} );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'get-taxonomy-term', 'Get Taxonomy Term', 'Get a term from a registered taxonomy by ID', $term_get_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'taxonomy_term_get', 'Get Taxonomy Term', 'Get a term from a registered taxonomy by ID', $term_get_schema, function ( $params ) {
 			return $this->get_taxonomy_term_tool( $params['taxonomy'], (int) $params['id'] );
 		} );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'save-taxonomy-term', 'Save Taxonomy Term', 'Create or update a term in a registered taxonomy', $term_save_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'taxonomy_term_save', 'Save Taxonomy Term', 'Create or update a term in a registered taxonomy', $term_save_schema, function ( $params ) {
 			return $this->save_taxonomy_term_tool( $params );
 		}, false, 'manage_categories' );
 
-		$this->add_ability( self::INTERNAL_PREFIX . 'delete-taxonomy-term', 'Delete Taxonomy Term', 'Delete a term from a registered taxonomy', $term_get_schema, function ( $params ) {
+		$this->add_ability( self::INTERNAL_PREFIX . 'taxonomy_term_delete', 'Delete Taxonomy Term', 'Delete a term from a registered taxonomy', $term_get_schema, function ( $params ) {
 			return $this->delete_term( $params['taxonomy'], (int) $params['id'] );
 		}, false, 'manage_categories' );
 	}

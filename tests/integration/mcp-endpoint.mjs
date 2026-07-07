@@ -173,59 +173,58 @@ assert(Array.isArray(tools), 'tools/list did not return result.tools array');
 assert(tools.length > 0, 'tools/list returned no tools');
 
 const expectedTools = [
-  'wp-forge-list-post-types',
-  'wp-forge-search-content',
-  'wp-forge-get-content',
-  'wp-forge-save-content',
-  'wp-forge-delete-content',
-  'wp-forge-list-taxonomies',
-  'wp-forge-list-taxonomy-terms',
-  'wp-forge-get-taxonomy-term',
-  'wp-forge-save-taxonomy-term',
-  'wp-forge-delete-taxonomy-term',
-  'wp-forge-list-media',
-  'wp-forge-get-media',
-  'wp-forge-get-media-file',
-  'wp-forge-upload-media',
-  'wp-forge-update-media',
-  'wp-forge-delete-media',
-  'wp-forge-search-media',
-  'wp-forge-users-search',
-  'wp-forge-get-user',
-  'wp-forge-save-user',
-  'wp-forge-delete-user',
-  'wp-forge-get-general-settings',
-  'wp-forge-save-general-settings',
-  'wp-forge-get-site-info',
-  'wp-forge-list-plugins',
-  'wp-forge-install-plugin',
-  'wp-forge-activate-plugin',
-  'wp-forge-deactivate-plugin',
-  'wp-forge-uninstall-plugin',
-  'wp-forge-list-themes',
-  'wp-forge-install-theme',
-  'wp-forge-activate-theme',
-  'wp-forge-delete-theme',
-  'wp-forge-list-options',
-  'wp-forge-get-option',
-  'wp-forge-save-option',
-  'wp-forge-delete-option',
-  'wp-forge-list-comments',
-  'wp-forge-get-comment',
-  'wp-forge-save-comment',
-  'wp-forge-delete-comment',
-  'wp-forge-get-site-health-info',
-  'wp-forge-list-site-health-tests',
-  'wp-forge-read-error-log',
-  'wp-forge-run-wp-cli-command',
-  'wp-forge-get-global-styles',
-  'wp-forge-update-global-styles',
-  'wp-forge-get-active-global-styles',
-  'wp-forge-get-active-global-styles-id',
-  'wp-forge-get-active-theme',
-  'wp-forge-list-api-functions',
-  'wp-forge-get-function-details',
-  'wp-forge-run-api-function',
+  'wp-forge-post_type_list',
+  'wp-forge-content_search',
+  'wp-forge-content_get',
+  'wp-forge-content_save',
+  'wp-forge-content_delete',
+  'wp-forge-taxonomy_list',
+  'wp-forge-taxonomy_term_list',
+  'wp-forge-taxonomy_term_get',
+  'wp-forge-taxonomy_term_save',
+  'wp-forge-taxonomy_term_delete',
+  'wp-forge-media_list',
+  'wp-forge-media_get',
+  'wp-forge-media_file_get',
+  'wp-forge-media_upload',
+  'wp-forge-media_update',
+  'wp-forge-media_delete',
+  'wp-forge-media_search',
+  'wp-forge-user_search',
+  'wp-forge-user_get',
+  'wp-forge-user_save',
+  'wp-forge-user_delete',
+  'wp-forge-general_settings_get',
+  'wp-forge-general_settings_save',
+  'wp-forge-site_info_get',
+  'wp-forge-plugin_list',
+  'wp-forge-plugin_install',
+  'wp-forge-plugin_set_status',
+  'wp-forge-plugin_uninstall',
+  'wp-forge-theme_list',
+  'wp-forge-theme_install',
+  'wp-forge-theme_activate',
+  'wp-forge-theme_delete',
+  'wp-forge-option_list',
+  'wp-forge-option_get',
+  'wp-forge-option_save',
+  'wp-forge-option_delete',
+  'wp-forge-comment_list',
+  'wp-forge-comment_get',
+  'wp-forge-comment_save',
+  'wp-forge-comment_delete',
+  'wp-forge-site_health_info_get',
+  'wp-forge-site_health_test_list',
+  'wp-forge-error_log_read',
+  'wp-forge-wp_cli_command_run',
+  'wp-forge-global_styles_get',
+  'wp-forge-global_styles_update',
+  'wp-forge-active_global_styles_get',
+  'wp-forge-active_global_styles_id_get',
+  'wp-forge-active_theme_get',
+  'wp-forge-api_function_list',
+  'wp-forge-function_details_get',
+  'wp-forge-api_function_run',
 ];
 
 const toolNames = tools.map((tool) => tool.name);
@@ -277,170 +276,170 @@ async function expectError(name, args = {}, statusCode = null) {
 
 const suffix = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 
-const savedPost = await expectSuccess('wp-forge-save-content', {
+const savedPost = await expectSuccess('wp-forge-content_save', {
   post_type: 'post',
   title: `MCP integration post ${suffix}`,
   content: 'Created by the WordPress MCP integration test.',
   status: 'draft',
 });
 const postId = savedPost.id;
-await expectSuccess('wp-forge-search-content', { post_type: 'post', status: 'draft', query: 'MCP integration post', per_page: 5 });
-const postItem = await expectSuccess('wp-forge-get-content', { post_type: 'post', id: postId, fields: ['id', 'type', 'title'] });
-assert(postItem.id === postId && postItem.type === 'post', 'wp-forge-get-content returned the wrong post');
-await expectSuccess('wp-forge-save-content', { post_type: 'post', id: postId, title: `MCP integration post updated ${suffix}` });
-await expectError('wp-forge-save-content', { post_type: 'post', id: postId, parent_id: 1 }, 400);
+await expectSuccess('wp-forge-content_search', { post_type: 'post', status: 'draft', query: 'MCP integration post', per_page: 5 });
+const postItem = await expectSuccess('wp-forge-content_get', { post_type: 'post', id: postId, fields: ['id', 'type', 'title'] });
+assert(postItem.id === postId && postItem.type === 'post', 'wp-forge-content_get returned the wrong post');
+await expectSuccess('wp-forge-content_save', { post_type: 'post', id: postId, title: `MCP integration post updated ${suffix}` });
+await expectError('wp-forge-content_save', { post_type: 'post', id: postId, parent_id: 1 }, 400);
 
-const page = await expectSuccess('wp-forge-save-content', {
+const page = await expectSuccess('wp-forge-content_save', {
   post_type: 'page',
   title: `MCP integration page ${suffix}`,
   content: 'Created by the WordPress MCP integration test.',
   status: 'draft',
 });
 const pageId = page.id;
-await expectSuccess('wp-forge-search-content', { post_type: 'page', status: 'draft', query: 'MCP integration page', per_page: 5, orderby: 'menu_order' });
-const pageItem = await expectSuccess('wp-forge-get-content', { post_type: 'page', id: pageId });
-assert(pageItem.id === pageId, 'wp-forge-get-content returned the wrong page');
-await expectSuccess('wp-forge-save-content', { post_type: 'page', id: pageId, title: `MCP integration page updated ${suffix}`, parent_id: 0 });
-await expectError('wp-forge-save-content', { post_type: 'page', id: postId, title: 'Wrong type' }, 400);
+await expectSuccess('wp-forge-content_search', { post_type: 'page', status: 'draft', query: 'MCP integration page', per_page: 5, orderby: 'menu_order' });
+const pageItem = await expectSuccess('wp-forge-content_get', { post_type: 'page', id: pageId });
+assert(pageItem.id === pageId, 'wp-forge-content_get returned the wrong page');
+await expectSuccess('wp-forge-content_save', { post_type: 'page', id: pageId, title: `MCP integration page updated ${suffix}`, parent_id: 0 });
+await expectError('wp-forge-content_save', { post_type: 'page', id: postId, title: 'Wrong type' }, 400);
 
-const postTypes = await expectSuccess('wp-forge-list-post-types', { public: true });
-assert(Array.isArray(postTypes.post_types), 'wp-forge-list-post-types did not return a post_types array');
+const postTypes = await expectSuccess('wp-forge-post_type_list', { public: true });
+assert(Array.isArray(postTypes.post_types), 'wp-forge-post_type_list did not return a post_types array');
 const postType = postTypes.post_types.find((item) => item.slug === 'post');
-assert(postType, 'wp-forge-list-post-types did not include posts');
-assert(postType.hierarchical === false, 'wp-forge-list-post-types did not expose hierarchical status');
-assert(Array.isArray(postType.supports) && postType.supports.includes('title'), 'wp-forge-list-post-types did not expose supported features');
-assert(Array.isArray(postType.taxonomies) && postType.taxonomies.includes('category'), 'wp-forge-list-post-types did not expose supported taxonomies');
+assert(postType, 'wp-forge-post_type_list did not include posts');
+assert(postType.hierarchical === false, 'wp-forge-post_type_list did not expose hierarchical status');
+assert(Array.isArray(postType.supports) && postType.supports.includes('title'), 'wp-forge-post_type_list did not expose supported features');
+assert(Array.isArray(postType.taxonomies) && postType.taxonomies.includes('category'), 'wp-forge-post_type_list did not expose supported taxonomies');
 
-const taxonomies = await expectSuccess('wp-forge-list-taxonomies');
-assert(taxonomies.some((taxonomy) => taxonomy.name === 'category'), 'wp-forge-list-taxonomies did not include categories');
-await expectSuccess('wp-forge-list-taxonomy-terms', { taxonomy: 'category' });
-const taxonomyTerm = await expectSuccess('wp-forge-save-taxonomy-term', {
+const taxonomies = await expectSuccess('wp-forge-taxonomy_list');
+assert(taxonomies.some((taxonomy) => taxonomy.name === 'category'), 'wp-forge-taxonomy_list did not include categories');
+await expectSuccess('wp-forge-taxonomy_term_list', { taxonomy: 'category' });
+const taxonomyTerm = await expectSuccess('wp-forge-taxonomy_term_save', {
   taxonomy: 'category',
   name: `MCP Taxonomy Term ${suffix}`,
   slug: `mcp-taxonomy-term-${suffix}`,
 });
 const taxonomyTermId = taxonomyTerm.term_id;
-await expectSuccess('wp-forge-save-content', { post_type: 'post', id: postId, taxonomies: { category: [taxonomyTermId] } });
-await expectError('wp-forge-save-content', { post_type: 'post', id: postId, taxonomies: { nav_menu: [taxonomyTermId] } }, 400);
-const savedTerm = await expectSuccess('wp-forge-get-taxonomy-term', { taxonomy: 'category', id: taxonomyTermId });
-assert(savedTerm.id === taxonomyTermId, 'wp-forge-get-taxonomy-term returned the wrong term');
-await expectSuccess('wp-forge-save-taxonomy-term', { taxonomy: 'category', id: taxonomyTermId, name: `MCP Taxonomy Term Updated ${suffix}`, description: 'Updated by MCP integration tests.' });
-await expectSuccess('wp-forge-delete-taxonomy-term', { taxonomy: 'category', id: taxonomyTermId });
+await expectSuccess('wp-forge-content_save', { post_type: 'post', id: postId, taxonomies: { category: [taxonomyTermId] } });
+await expectError('wp-forge-content_save', { post_type: 'post', id: postId, taxonomies: { nav_menu: [taxonomyTermId] } }, 400);
+const savedTerm = await expectSuccess('wp-forge-taxonomy_term_get', { taxonomy: 'category', id: taxonomyTermId });
+assert(savedTerm.id === taxonomyTermId, 'wp-forge-taxonomy_term_get returned the wrong term');
+await expectSuccess('wp-forge-taxonomy_term_save', { taxonomy: 'category', id: taxonomyTermId, name: `MCP Taxonomy Term Updated ${suffix}`, description: 'Updated by MCP integration tests.' });
+await expectSuccess('wp-forge-taxonomy_term_delete', { taxonomy: 'category', id: taxonomyTermId });
 
-const mediaId = await expectSuccess('wp-forge-upload-media', {
+const mediaId = await expectSuccess('wp-forge-media_upload', {
   filename: `mcp-${suffix}.txt`,
   mime_type: 'text/plain',
   title: `MCP media ${suffix}`,
   base64: Buffer.from(`MCP media ${suffix}`).toString('base64'),
 });
-await expectSuccess('wp-forge-list-media', { per_page: 5 });
-await expectSuccess('wp-forge-search-media', { search: 'MCP media', per_page: 5 });
-const media = await expectSuccess('wp-forge-get-media', { id: mediaId });
-assert(media.id === mediaId, 'wp-forge-get-media returned the wrong item');
-const mediaFile = await expectSuccess('wp-forge-get-media-file', { id: mediaId });
-assert(mediaFile.base64, 'wp-forge-get-media-file did not return base64 content');
-await expectSuccess('wp-forge-update-media', { id: mediaId, title: `MCP media updated ${suffix}`, alt_text: 'MCP alt text' });
-await expectSuccess('wp-forge-delete-media', { id: mediaId });
+await expectSuccess('wp-forge-media_list', { per_page: 5 });
+await expectSuccess('wp-forge-media_search', { search: 'MCP media', per_page: 5 });
+const media = await expectSuccess('wp-forge-media_get', { id: mediaId });
+assert(media.id === mediaId, 'wp-forge-media_get returned the wrong item');
+const mediaFile = await expectSuccess('wp-forge-media_file_get', { id: mediaId });
+assert(mediaFile.base64, 'wp-forge-media_file_get did not return base64 content');
+await expectSuccess('wp-forge-media_update', { id: mediaId, title: `MCP media updated ${suffix}`, alt_text: 'MCP alt text' });
+await expectSuccess('wp-forge-media_delete', { id: mediaId });
 
 const usernameForTest = `mcp_user_${suffix}`.replace(/[^a-zA-Z0-9_]/g, '_');
-const userId = await expectSuccess('wp-forge-save-user', {
+const userId = await expectSuccess('wp-forge-user_save', {
   username: usernameForTest,
   email: `${usernameForTest}@example.com`,
   password: `mcp-password-${suffix}`,
   role: 'subscriber',
 });
-await expectSuccess('wp-forge-users-search', { search: usernameForTest, per_page: 5 });
-const user = await expectSuccess('wp-forge-get-user', { id: userId });
-assert(user.id === userId, 'wp-forge-get-user returned the wrong user');
-await expectSuccess('wp-forge-save-user', { id: userId, first_name: 'MCP', last_name: 'Integration' });
-await expectSuccess('wp-forge-delete-user', { id: userId });
+await expectSuccess('wp-forge-user_search', { search: usernameForTest, per_page: 5 });
+const user = await expectSuccess('wp-forge-user_get', { id: userId });
+assert(user.id === userId, 'wp-forge-user_get returned the wrong user');
+await expectSuccess('wp-forge-user_save', { id: userId, first_name: 'MCP', last_name: 'Integration' });
+await expectSuccess('wp-forge-user_delete', { id: userId });
 
-await expectSuccess('wp-forge-get-general-settings');
-await expectSuccess('wp-forge-save-general-settings', {});
-await expectSuccess('wp-forge-get-site-info');
-await expectSuccess('wp-forge-get-active-theme');
+await expectSuccess('wp-forge-general_settings_get');
+await expectSuccess('wp-forge-general_settings_save', {});
+await expectSuccess('wp-forge-site_info_get');
+await expectSuccess('wp-forge-active_theme_get');
 
-const plugins = await expectSuccess('wp-forge-list-plugins');
+const plugins = await expectSuccess('wp-forge-plugin_list');
 assert(
   plugins.some((plugin) => plugin.plugin_file === 'wp-plugin-mcp/wp-plugin-mcp.php'),
-  'wp-forge-list-plugins did not include this plugin'
+  'wp-forge-plugin_list did not include this plugin'
 );
-await expectError('wp-forge-install-plugin', { slug: `missing-mcp-plugin-${suffix}` });
-await expectError('wp-forge-activate-plugin', { plugin_file: `missing-mcp-plugin-${suffix}/missing.php` }, 404);
-await expectError('wp-forge-deactivate-plugin', { plugin_file: `missing-mcp-plugin-${suffix}/missing.php` }, 404);
-await expectError('wp-forge-uninstall-plugin', { plugin_file: 'wp-plugin-mcp/wp-plugin-mcp.php' }, 400);
+await expectError('wp-forge-plugin_install', { slug: `missing-mcp-plugin-${suffix}` });
+await expectError('wp-forge-plugin_set_status', { plugin_file: `missing-mcp-plugin-${suffix}/missing.php`, status: 'active' }, 404);
+await expectError('wp-forge-plugin_set_status', { plugin_file: `missing-mcp-plugin-${suffix}/missing.php`, status: 'inactive' }, 404);
+await expectError('wp-forge-plugin_uninstall', { plugin_file: 'wp-plugin-mcp/wp-plugin-mcp.php' }, 400);
 
-const themes = await expectSuccess('wp-forge-list-themes');
+const themes = await expectSuccess('wp-forge-theme_list');
 const activeTheme = themes.find((theme) => theme.active === true);
-assert(activeTheme, 'wp-forge-list-themes did not include an active theme');
-await expectError('wp-forge-install-theme', { slug: `missing-mcp-theme-${suffix}` });
-await expectSuccess('wp-forge-activate-theme', { stylesheet: activeTheme.stylesheet });
-await expectError('wp-forge-delete-theme', { stylesheet: activeTheme.stylesheet }, 400);
+assert(activeTheme, 'wp-forge-theme_list did not include an active theme');
+await expectError('wp-forge-theme_install', { slug: `missing-mcp-theme-${suffix}` });
+await expectSuccess('wp-forge-theme_activate', { stylesheet: activeTheme.stylesheet });
+await expectError('wp-forge-theme_delete', { stylesheet: activeTheme.stylesheet }, 400);
 
 const optionName = `wp_forge_mcp_integration_${suffix}`;
-await expectSuccess('wp-forge-save-option', { option_name: optionName, value: { status: 'ok', suffix } });
-const option = await expectSuccess('wp-forge-get-option', { option_name: optionName });
-assert(option.exists === true, 'wp-forge-get-option did not find the test option');
-await expectSuccess('wp-forge-list-options', { name_prefix: 'wp_forge_mcp_integration_', per_page: 10 });
-await expectSuccess('wp-forge-delete-option', { option_name: optionName });
+await expectSuccess('wp-forge-option_save', { option_name: optionName, value: { status: 'ok', suffix } });
+const option = await expectSuccess('wp-forge-option_get', { option_name: optionName });
+assert(option.exists === true, 'wp-forge-option_get did not find the test option');
+await expectSuccess('wp-forge-option_list', { name_prefix: 'wp_forge_mcp_integration_', per_page: 10 });
+await expectSuccess('wp-forge-option_delete', { option_name: optionName });
 
-const commentId = await expectSuccess('wp-forge-save-comment', {
+const commentId = await expectSuccess('wp-forge-comment_save', {
   post_id: postId,
   content: `MCP comment ${suffix}`,
   author_name: 'MCP Integration',
   author_email: 'mcp-integration@example.com',
   status: 'hold',
 });
-await expectSuccess('wp-forge-list-comments', { post_id: postId, per_page: 5 });
-const comment = await expectSuccess('wp-forge-get-comment', { id: commentId });
-assert(comment.id === commentId, 'wp-forge-get-comment returned the wrong comment');
-await expectSuccess('wp-forge-save-comment', { id: commentId, content: `MCP comment updated ${suffix}` });
-await expectSuccess('wp-forge-save-comment', { id: commentId, status: 'approved' });
-const approvedComment = await expectSuccess('wp-forge-get-comment', { id: commentId });
-assert(approvedComment.status === 'approved', 'wp-forge-save-comment did not approve the comment');
-await expectSuccess('wp-forge-save-comment', { id: commentId, status: 'spam' });
-const spamComment = await expectSuccess('wp-forge-get-comment', { id: commentId });
-assert(spamComment.status === 'spam', 'wp-forge-save-comment did not mark the comment as spam');
-await expectSuccess('wp-forge-delete-comment', { id: commentId });
+await expectSuccess('wp-forge-comment_list', { post_id: postId, per_page: 5 });
+const comment = await expectSuccess('wp-forge-comment_get', { id: commentId });
+assert(comment.id === commentId, 'wp-forge-comment_get returned the wrong comment');
+await expectSuccess('wp-forge-comment_save', { id: commentId, content: `MCP comment updated ${suffix}` });
+await expectSuccess('wp-forge-comment_save', { id: commentId, status: 'approved' });
+const approvedComment = await expectSuccess('wp-forge-comment_get', { id: commentId });
+assert(approvedComment.status === 'approved', 'wp-forge-comment_save did not approve the comment');
+await expectSuccess('wp-forge-comment_save', { id: commentId, status: 'spam' });
+const spamComment = await expectSuccess('wp-forge-comment_get', { id: commentId });
+assert(spamComment.status === 'spam', 'wp-forge-comment_save did not mark the comment as spam');
+await expectSuccess('wp-forge-comment_delete', { id: commentId });
 
-const siteHealthInfo = await expectSuccess('wp-forge-get-site-health-info');
-assert(siteHealthInfo['wp-core'], 'wp-forge-get-site-health-info did not include wp-core debug data');
-await expectSuccess('wp-forge-list-site-health-tests');
-await expectSuccess('wp-forge-read-error-log', { lines: 5 });
-await expectError('wp-forge-run-wp-cli-command', { args: ['plugin', 'list'] }, 403);
+const siteHealthInfo = await expectSuccess('wp-forge-site_health_info_get');
+assert(siteHealthInfo['wp-core'], 'wp-forge-site_health_info_get did not include wp-core debug data');
+await expectSuccess('wp-forge-site_health_test_list');
+await expectSuccess('wp-forge-error_log_read', { lines: 5 });
+await expectError('wp-forge-wp_cli_command_run', { args: ['plugin', 'list'] }, 403);
 
-const activeGlobalStylesId = await expectSuccess('wp-forge-get-active-global-styles-id');
+const activeGlobalStylesId = await expectSuccess('wp-forge-active_global_styles_id_get');
 if (activeGlobalStylesId.id) {
-  await expectSuccess('wp-forge-get-active-global-styles');
-  await expectSuccess('wp-forge-get-global-styles', { id: activeGlobalStylesId.id });
+  await expectSuccess('wp-forge-active_global_styles_get');
+  await expectSuccess('wp-forge-global_styles_get', { id: activeGlobalStylesId.id });
 } else {
-  await expectError('wp-forge-get-active-global-styles', {});
-  await expectError('wp-forge-get-global-styles', { id: 99999999 }, 404);
+  await expectError('wp-forge-active_global_styles_get', {});
+  await expectError('wp-forge-global_styles_get', { id: 99999999 }, 404);
 }
-await expectError('wp-forge-update-global-styles', { id: 99999999, settings: {}, styles: {} }, 404);
+await expectError('wp-forge-global_styles_update', { id: 99999999, settings: {}, styles: {} }, 404);
 
-await expectSuccess('wp-forge-list-api-functions', { namespace: 'wp/v2', methods: ['GET'], search: '/types' });
-await expectSuccess('wp-forge-get-function-details', { route: '/wp/v2/types', method: 'GET' });
-await expectSuccess('wp-forge-run-api-function', { route: '/wp/v2/types', method: 'GET' });
+await expectSuccess('wp-forge-api_function_list', { namespace: 'wp/v2', methods: ['GET'], search: '/types' });
+await expectSuccess('wp-forge-function_details_get', { route: '/wp/v2/types', method: 'GET' });
+await expectSuccess('wp-forge-api_function_run', { route: '/wp/v2/types', method: 'GET' });
 
 if (!username && !password) {
-  await expectSuccess('wp-forge-save-option', { option_name: 'wp_forge_mcp_activity_log_enabled', value: '' });
+  await expectSuccess('wp-forge-option_save', { option_name: 'wp_forge_mcp_activity_log_enabled', value: '' });
   const disabledSettingsPage = await getAdminSettingsPage();
   assert(disabledSettingsPage.includes('Enable MCP activity log'), 'Activity log setting was not displayed');
   assert(!disabledSettingsPage.includes('Filter Activity Log'), 'Activity log filters were displayed while disabled');
   assert(!disabledSettingsPage.includes('No MCP activity has been logged yet.'), 'Activity log empty state was displayed while disabled');
 
-  await expectSuccess('wp-forge-save-option', { option_name: 'wp_forge_mcp_activity_log_enabled', value: '1' });
-  await expectSuccess('wp-forge-get-site-info');
+  await expectSuccess('wp-forge-option_save', { option_name: 'wp_forge_mcp_activity_log_enabled', value: '1' });
+  await expectSuccess('wp-forge-site_info_get');
   const settingsPage = await getAdminSettingsPage();
-  assert(settingsPage.includes('wp-forge-get-site-info'), 'Activity log did not show a logged MCP tool call');
+  assert(settingsPage.includes('wp-forge-site_info_get'), 'Activity log did not show a logged MCP tool call');
   assert(settingsPage.includes('Filter Activity Log'), 'Activity log filters were not displayed');
   assert(settingsPage.includes('mcp_log_per_page'), 'Activity log per-page control was not displayed');
   assert(!settingsPage.includes('<td>0 ms</td>'), 'Activity log displayed a 0 ms duration');
 }
 
-await expectSuccess('wp-forge-delete-content', { post_type: 'page', id: pageId, force: true });
-await expectSuccess('wp-forge-delete-content', { post_type: 'post', id: postId, force: true });
+await expectSuccess('wp-forge-content_delete', { post_type: 'page', id: pageId, force: true });
+await expectSuccess('wp-forge-content_delete', { post_type: 'post', id: postId, force: true });
 
 for (const expectedTool of expectedTools) {
   assert(calledTools.has(expectedTool), `${expectedTool} was listed but not called by the integration test`);
