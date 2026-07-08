@@ -29,7 +29,7 @@ trait ErrorLogTools {
 			)
 		), function ( $params ) {
 			return $this->read_error_log( isset( $params['lines'] ) ? (int) $params['lines'] : 200 );
-		}, true, 'manage_options' );
+		}, true, 'wp_forge_mcp_read_error_log' );
 	}
 
 	/**

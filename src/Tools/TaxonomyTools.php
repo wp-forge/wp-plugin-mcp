@@ -67,19 +67,19 @@ trait TaxonomyTools {
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'taxonomy-term-list', 'List Taxonomy Terms', 'List terms for a registered taxonomy', $taxonomy_schema, function ( $params ) {
 			return $this->list_taxonomy_terms_tool( $params['taxonomy'] );
-		} );
+		}, true, 'read', array(), array( $this, 'can_list_terms_request' ) );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'taxonomy-term-get', 'Get Taxonomy Term', 'Get a term from a registered taxonomy by ID', $term_get_schema, function ( $params ) {
 			return $this->get_taxonomy_term_tool( $params['taxonomy'], (int) $params['id'] );
-		} );
+		}, true, 'read', array(), array( $this, 'can_list_terms_request' ) );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'taxonomy-term-save', 'Save Taxonomy Term', 'Create or update a term in a registered taxonomy', $term_save_schema, function ( $params ) {
 			return $this->save_taxonomy_term_tool( $params );
-		}, false, 'manage_categories' );
+		}, false, 'read', array(), array( $this, 'can_save_term_request' ) );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'taxonomy-term-delete', 'Delete Taxonomy Term', 'Delete a term from a registered taxonomy', $term_get_schema, function ( $params ) {
 			return $this->delete_term( $params['taxonomy'], (int) $params['id'] );
-		}, false, 'manage_categories', array( 'destructive' => true, 'idempotent' => true ) );
+		}, false, 'read', array( 'destructive' => true, 'idempotent' => true ), array( $this, 'can_delete_term_request' ) );
 	}
 
 	/**

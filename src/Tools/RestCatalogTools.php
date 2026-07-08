@@ -52,6 +52,6 @@ trait RestCatalogTools {
 			array( 'route', 'method' )
 		), function ( $params ) {
 			return $this->run_api_function( $params['route'], $params['method'], isset( $params['parameters'] ) ? $params['parameters'] : array() );
-		}, false );
+		}, false, 'read', array(), array( $this, 'can_run_api_function_request' ) );
 	}
 }

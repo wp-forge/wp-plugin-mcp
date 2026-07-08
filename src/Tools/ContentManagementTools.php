@@ -136,15 +136,15 @@ trait ContentManagementTools {
 		} );
 		$this->add_ability( self::INTERNAL_PREFIX . 'content-search', 'Search Content', 'Search and filter content for any registered post type', $search_content_schema, function ( $params ) {
 			return $this->search_content( $params );
-		} );
+		}, true, 'read', array(), array( $this, 'can_search_content_request' ) );
 		$this->add_ability( self::INTERNAL_PREFIX . 'content-get', 'Get Content', 'Get a content item from any registered post type by ID or slug', $content_id_schema, function ( $params ) {
 			return $this->get_content( $params );
-		} );
+		}, true, 'read', array(), array( $this, 'can_read_content_request' ) );
 		$this->add_ability( self::INTERNAL_PREFIX . 'content-save', 'Save Content', 'Create or update content for any registered post type', $save_content_schema, function ( $params ) {
 			return $this->save_content( $params );
-		}, false );
+		}, false, 'read', array(), array( $this, 'can_save_content_request' ) );
 		$this->add_ability( self::INTERNAL_PREFIX . 'content-delete', 'Delete Content', 'Delete content from any registered post type', $delete_content_schema, function ( $params ) {
 			return $this->delete_content( $params );
-		}, false, 'edit_posts', array( 'destructive' => true, 'idempotent' => true ) );
+		}, false, 'read', array( 'destructive' => true, 'idempotent' => true ), array( $this, 'can_delete_content_request' ) );
 	}
 }

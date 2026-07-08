@@ -76,6 +76,7 @@ class Plugin {
 	 */
 	public function init() {
 		add_action( 'admin_init', array( $this->activity_logger, 'maybe_create_table' ) );
+		add_action( 'admin_init', array( __CLASS__, 'ensure_custom_capabilities' ) );
 		add_action( 'plugins_loaded', array( $this, 'bootstrap_mcp_adapter' ) );
 		add_action( 'wp_abilities_api_init', array( $this->abilities, 'register_wordpress_abilities' ) );
 		add_action( 'mcp_adapter_init', array( $this, 'create_mcp_server' ) );
@@ -91,6 +92,27 @@ class Plugin {
 	public static function activate() {
 		$logger = new ActivityLogger();
 		$logger->create_table();
+		self::ensure_custom_capabilities();
+	}
+
+	/**
+	 * Grant MCP-specific sensitive capabilities to administrators.
+	 *
+	 * @return void
+	 */
+	public static function ensure_custom_capabilities() {
+		if ( ! function_exists( 'get_role' ) ) {
+			return;
+		}
+
+		$role = get_role( 'administrator' );
+		if ( ! $role || ! method_exists( $role, 'add_cap' ) ) {
+			return;
+		}
+
+		foreach ( array( 'wp_forge_mcp_manage_options', 'wp_forge_mcp_read_error_log', 'wp_forge_mcp_run_wp_cli' ) as $capability ) {
+			$role->add_cap( $capability );
+		}
 	}
 
 	/**

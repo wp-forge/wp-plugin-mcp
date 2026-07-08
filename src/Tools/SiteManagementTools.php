@@ -56,10 +56,10 @@ trait SiteManagementTools {
 		}, true, 'list_users' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'user-save', 'Save User', 'Create or update a WordPress user', $user_write_schema, function ( $params ) {
 			return $this->save_user( $params );
-		}, false, 'edit_users' );
+		}, false, 'read', array(), array( $this, 'can_save_user_request' ) );
 		$this->add_ability( self::INTERNAL_PREFIX . 'user-delete', 'Delete User', 'Delete a WordPress user by ID', $user_get_schema, function ( $params ) {
 			return $this->delete_user( (int) $params['id'] );
-		}, false, 'delete_users', array( 'destructive' => true, 'idempotent' => true ) );
+		}, false, 'read', array( 'destructive' => true, 'idempotent' => true ), array( $this, 'can_delete_user_request' ) );
 
 		$settings_schema = $this->schema(
 			array(
@@ -81,9 +81,9 @@ trait SiteManagementTools {
 		}, false, 'manage_options', array( 'idempotent' => true ) );
 		$this->add_ability( self::INTERNAL_PREFIX . 'site-info-get', 'Get Site Info', 'Get detailed site information', $this->schema(), function () {
 			return $this->get_site_info();
-		} );
+		}, true, 'manage_options' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'theme-active-get', 'Get Active Theme', 'Get the active theme information', $this->schema(), function () {
 			return $this->get_active_theme();
-		} );
+		}, true, 'switch_themes' );
 	}
 }

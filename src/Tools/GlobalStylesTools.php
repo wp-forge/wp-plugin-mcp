@@ -36,7 +36,7 @@ trait GlobalStylesTools {
 		}, true, 'edit_theme_options' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'global-styles-update', 'Update Global Styles', 'Update a global styles configuration', $update_schema, function ( $params ) {
 			return $this->update_global_styles( (int) $params['id'], $params );
-		}, false, 'edit_theme_options', array( 'idempotent' => true ) );
+		}, false, 'edit_theme_options', array( 'idempotent' => true ), array( $this, 'can_update_global_styles_request' ) );
 		$this->add_ability( self::INTERNAL_PREFIX . 'global-styles-active-get', 'Get Active Global Styles', 'Get the currently active global styles for the current theme', $this->schema(), function () {
 			return $this->get_active_global_styles();
 		}, true, 'edit_theme_options' );

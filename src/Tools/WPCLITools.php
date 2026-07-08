@@ -35,7 +35,7 @@ trait WPCLITools {
 			array( 'args' )
 		), function ( $params ) {
 			return $this->run_wp_cli_command( $params );
-		}, false, 'manage_options' );
+		}, false, 'wp_forge_mcp_run_wp_cli', array(), array( $this, 'can_run_wp_cli_request' ) );
 	}
 
 	/**

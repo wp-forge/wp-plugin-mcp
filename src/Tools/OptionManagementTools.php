@@ -38,11 +38,11 @@ trait OptionManagementTools {
 			)
 		), function ( $params ) {
 			return $this->list_options( $params );
-		}, true, 'manage_options' );
+		}, true, 'wp_forge_mcp_manage_options' );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'option-get', 'Get Option', 'Get a WordPress option value by name', $option_schema, function ( $params ) {
 			return $this->get_option_tool( $params['option_name'] );
-		}, true, 'manage_options' );
+		}, true, 'wp_forge_mcp_manage_options' );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'option-save', 'Save Option', 'Create or update a WordPress option value by name', $this->schema(
 			array(
@@ -53,11 +53,11 @@ trait OptionManagementTools {
 			array( 'option_name', 'value' )
 		), function ( $params ) {
 			return $this->update_option_tool( $params );
-		}, false, 'manage_options', array( 'idempotent' => true ) );
+		}, false, 'wp_forge_mcp_manage_options', array( 'idempotent' => true ), array( $this, 'can_manage_option_request' ) );
 
 		$this->add_ability( self::INTERNAL_PREFIX . 'option-delete', 'Delete Option', 'Delete a WordPress option by name', $option_schema, function ( $params ) {
 			return $this->delete_option_tool( $params['option_name'] );
-		}, false, 'manage_options', array( 'destructive' => true, 'idempotent' => true ) );
+		}, false, 'wp_forge_mcp_manage_options', array( 'destructive' => true, 'idempotent' => true ), array( $this, 'can_manage_option_request' ) );
 	}
 
 	/**
@@ -95,7 +95,7 @@ trait OptionManagementTools {
 		return array_map( function ( $row ) {
 			return array(
 				'option_name' => $row['option_name'],
-				'value'       => maybe_unserialize( $row['option_value'] ),
+				'value'       => $this->redact_option_value( $row['option_name'], maybe_unserialize( $row['option_value'] ) ),
 				'autoload'    => $row['autoload'],
 			);
 		}, $rows );
@@ -117,7 +117,7 @@ trait OptionManagementTools {
 
 		return array(
 			'option_name' => $option_name,
-			'value'       => $value,
+			'value'       => $this->redact_option_value( $option_name, $value ),
 			'exists'      => null !== $value,
 		);
 	}
@@ -140,7 +140,7 @@ trait OptionManagementTools {
 		return array(
 			'option_name' => $option_name,
 			'updated'     => (bool) $result,
-			'value'       => get_option( $option_name ),
+			'value'       => $this->redact_option_value( $option_name, get_option( $option_name ) ),
 		);
 	}
 
@@ -179,5 +179,27 @@ trait OptionManagementTools {
 		}
 
 		return trim( (string) $option_name );
+	}
+
+	/**
+	 * Redact sensitive option values from MCP responses.
+	 *
+	 * @param string $option_name Option name.
+	 * @param mixed  $value Option value.
+	 * @return mixed
+	 */
+	private function redact_option_value( $option_name, $value ) {
+		$patterns = array( 'secret', 'token', 'password', 'passwd', 'private_key', 'api_key', 'client_secret' );
+		if ( function_exists( 'apply_filters' ) ) {
+			$patterns = apply_filters( 'wp_forge_mcp_sensitive_option_patterns', $patterns );
+		}
+
+		foreach ( is_array( $patterns ) ? $patterns : array() as $pattern ) {
+			if ( '' !== (string) $pattern && false !== stripos( $option_name, (string) $pattern ) ) {
+				return '[redacted]';
+			}
+		}
+
+		return $value;
 	}
 }

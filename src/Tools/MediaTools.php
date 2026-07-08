@@ -59,19 +59,19 @@ trait MediaTools {
 		}, true, 'upload_files' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'media-get', 'Get Media', 'Get a WordPress media item by ID', $id_schema, function ( $params ) {
 			return $this->get_content_item( (int) $params['id'], 'attachment' );
-		}, true, 'upload_files' );
+		}, true, 'upload_files', array(), array( $this, 'can_read_media_request' ) );
 		$this->add_ability( self::INTERNAL_PREFIX . 'media-file-get', 'Get Media File', 'Get the actual file content of a WordPress media item', $id_schema, function ( $params ) {
 			return $this->get_media_file( (int) $params['id'] );
-		}, true, 'upload_files' );
+		}, true, 'upload_files', array(), array( $this, 'can_read_media_request' ) );
 		$this->add_ability( self::INTERNAL_PREFIX . 'media-upload', 'Upload Media', 'Upload a new media file to WordPress', $upload_schema, function ( $params ) {
 			return $this->upload_media( $params );
 		}, false, 'upload_files' );
 		$this->add_ability( self::INTERNAL_PREFIX . 'media-update', 'Update Media', 'Update a WordPress media item', $update_schema, function ( $params ) {
 			return $this->update_media( (int) $params['id'], $params );
-		}, false, 'upload_files', array( 'idempotent' => true ) );
+		}, false, 'upload_files', array( 'idempotent' => true ), array( $this, 'can_update_media_request' ) );
 		$this->add_ability( self::INTERNAL_PREFIX . 'media-delete', 'Delete Media', 'Delete a WordPress media item permanently', $id_schema, function ( $params ) {
 			return $this->delete_content_item( (int) $params['id'], 'attachment' );
-		}, false, 'upload_files', array( 'destructive' => true, 'idempotent' => true ) );
+		}, false, 'upload_files', array( 'destructive' => true, 'idempotent' => true ), array( $this, 'can_delete_media_request' ) );
 		$this->add_ability( self::INTERNAL_PREFIX . 'media-search', 'Search Media', 'Search WordPress media by title, caption, or description', $list_schema, function ( $params ) {
 			return $this->search_content_items( 'attachment', array_merge( array( 'status' => 'inherit' ), $params ) );
 		}, true, 'upload_files' );
