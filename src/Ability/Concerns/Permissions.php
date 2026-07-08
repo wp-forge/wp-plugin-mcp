@@ -438,10 +438,12 @@ trait Permissions {
 		}
 
 		$post = get_post( (int) $params['id'] );
+		// Let the handler return a normal 404 for missing posts or wrong post types.
 		if ( ! $post || 'wp_global_styles' !== $post->post_type ) {
 			return true;
 		}
 
+		// Only enforce object-level edit permissions after confirming this is a global styles post.
 		return $this->current_user_can_cap( 'edit_post', (int) $post->ID ) ? true : $this->permission_error( 'Access denied for editing this global styles post.' );
 	}
 
