@@ -61,6 +61,38 @@ $test_taxonomies      = array(
 		'rest_base'   => 'mcp-genres',
 	),
 );
+$test_rest_routes     = array(
+	'/wp/v2/types'                => array(
+		array(
+			'methods' => array(
+				'GET' => true,
+			),
+			'args'    => array(),
+		),
+	),
+	'/wp/v2/posts/(?P<id>[\d]+)' => array(
+		array(
+			'methods' => array(
+				'GET'    => true,
+				'POST'   => true,
+				'PUT'    => true,
+				'PATCH'  => true,
+				'DELETE' => true,
+			),
+			'args'    => array(
+				'id' => array( 'type' => 'integer' ),
+			),
+		),
+	),
+	'/mcp/wp-forge'               => array(
+		array(
+			'methods' => array(
+				'POST' => true,
+			),
+			'args'    => array(),
+		),
+	),
+);
 $test_post_types      = array(
 	'post'          => array(
 		'name'                => 'post',
@@ -254,6 +286,24 @@ if ( ! function_exists( 'get_allowed_mime_types' ) ) {
 	}
 }
 
+if ( ! function_exists( 'rest_get_server' ) ) {
+	function rest_get_server() {
+		global $test_rest_routes;
+
+		return new class( $test_rest_routes ) {
+			private $routes;
+
+			public function __construct( $routes ) {
+				$this->routes = $routes;
+			}
+
+			public function get_routes() {
+				return $this->routes;
+			}
+		};
+	}
+}
+
 if ( ! function_exists( 'plugin_basename' ) ) {
 	function plugin_basename( $file ) {
 		return basename( $file );
@@ -395,6 +445,25 @@ assert_true( in_array( 'application/x-mcp-test', $media_schema['input_schema']['
 $comment_schema = $abilities->get_schema( 'wp-forge-comment-save' );
 assert_true( ! isset( $comment_schema['input_schema']['properties']['status']['enum'] ), 'Comment status schema should stay flexible when custom statuses cannot be reliably discovered.' );
 
+$api_list_schema = $abilities->get_schema( 'wp-forge-api-function-list' );
+$api_methods     = $api_list_schema['input_schema']['properties']['methods']['items']['enum'];
+assert_true( in_array( 'PUT', $api_methods, true ), 'REST list schema should include PUT when a REST route supports it.' );
+assert_true( ! in_array( 'OPTIONS', $api_methods, true ), 'REST list schema should be derived from registered route methods.' );
+
+$api_details_schema = $abilities->get_schema( 'wp-forge-api-function-details-get' );
+assert_same(
+	$api_methods,
+	$api_details_schema['input_schema']['properties']['method']['enum'],
+	'REST details schema should use the same route-derived methods as list.'
+);
+
+$api_run_schema = $abilities->get_schema( 'wp-forge-api-function-run' );
+assert_same(
+	$api_methods,
+	$api_run_schema['input_schema']['properties']['method']['enum'],
+	'REST runner schema should use the same route-derived methods as list.'
+);
+
 $invalid_search_status = $abilities->call( 'wp-forge-content-search', array( 'post_type' => 'post', 'status' => 'mcp-missing-status' ) );
 assert_same( 'error', $invalid_search_status['status'], 'Search content should reject unknown post statuses before querying.' );
 assert_same( 400, $invalid_search_status['statusCode'], 'Unknown query post statuses should be a client error.' );
@@ -468,6 +537,39 @@ assert_same( 'posts', $post_types['message']['post_types'][0]['rest_base'], 'Pos
 $public_hierarchical_post_types = $abilities->call( 'wp-forge-post-type-list', array( 'public' => true, 'hierarchical' => true ) );
 assert_same( array( 'page' ), array_column( $public_hierarchical_post_types['message']['post_types'], 'slug' ), 'Post type list should pass filters through to get_post_types().' );
 
+$put_api_functions = $abilities->call(
+	'wp-forge-api-function-list',
+	array(
+		'namespace' => 'wp/v2',
+		'methods'   => array( 'PUT' ),
+	)
+);
+assert_same( 'success', $put_api_functions['status'], 'REST function list should accept route-derived PUT filters.' );
+assert_same(
+	array( 'PUT' ),
+	array_values( array_unique( array_column( $put_api_functions['message'], 'method' ) ) ),
+	'REST function list should return PUT routes when supported.'
+);
+
+$put_api_details = $abilities->call(
+	'wp-forge-api-function-details-get',
+	array(
+		'route'  => '/wp/v2/posts/(?P<id>[\d]+)',
+		'method' => 'PUT',
+	)
+);
+assert_same( 'success', $put_api_details['status'], 'REST function details should accept PUT when the route supports it.' );
+assert_same( 'PUT', $put_api_details['message']['method'], 'REST function details should preserve the supported PUT method.' );
+
+$mcp_api_functions = $abilities->call(
+	'wp-forge-api-function-list',
+	array(
+		'methods' => array( 'POST' ),
+		'search'  => '/mcp/wp-forge',
+	)
+);
+assert_same( array(), $mcp_api_functions['message'], 'REST function list should not expose the MCP transport route.' );
+
 $wp_ability_names = $abilities->get_wordpress_ability_names();
 assert_same( 53, count( $wp_ability_names ), 'Expected all abilities to be available for the MCP adapter.' );
 assert_true( in_array( 'wp-forge/content-search', $wp_ability_names, true ), 'Adapter ability list should use WordPress ability names.' );
@@ -489,6 +591,11 @@ assert_same( true, $registered_abilities['wp-forge/general-settings-save']['meta
 assert_same( false, $registered_abilities['wp-forge/plugin-activate']['meta']['annotations']['destructive'], 'Activation should not be marked destructive.' );
 assert_same( true, $registered_abilities['wp-forge/plugin-activate']['meta']['annotations']['idempotent'], 'Activation should be marked idempotent.' );
 assert_same( true, $registered_abilities['wp-forge/plugin-uninstall']['meta']['annotations']['destructive'], 'Uninstall should be marked destructive.' );
+assert_same(
+	$api_methods,
+	$registered_abilities['wp-forge/api-function-run']['input_schema']['properties']['method']['enum'],
+	'Registered WordPress REST runner ability should use route-derived methods.'
+);
 assert_same( true, $registered_abilities['wp-forge/content-search']['permission_callback'](), 'Permission callback should allow users with the ability capability.' );
 
 $registered_result = $registered_abilities['wp-forge/content-search']['execute_callback']( array( 'post_type' => 'post' ) );

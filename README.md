@@ -152,6 +152,8 @@ WP-CLI execution is disabled by default. To enable it, define `WP_FORGE_MCP_ENAB
 | `wp-forge-api-function-details-get` | Get detailed metadata for a specific REST API route and HTTP method |
 | `wp-forge-api-function-run` | Execute a REST API request by route, method, and parameters |
 
+REST method schemas are derived from the registered WordPress REST routes at discovery time, so methods such as `PUT` appear when the underlying API supports them.
+
 ## Copy-Paste MCP Configuration
 
 Replace `https://example.com` with your site URL. Create a WordPress Application Password from your user profile, then replace the username and password placeholders below.

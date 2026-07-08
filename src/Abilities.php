@@ -2356,8 +2356,18 @@ class Abilities {
 			return Response::error( 'This ability requires a WordPress runtime.', 500 );
 		}
 
-		$routes = rest_get_server()->get_routes();
-		$items  = array();
+		$routes          = rest_get_server()->get_routes();
+		$allowed_methods = $this->get_rest_api_methods_from_routes( $routes );
+		$method_filter   = array();
+		$items           = array();
+
+		if ( ! empty( $params['methods'] ) && is_array( $params['methods'] ) ) {
+			$method_filter = array_values(
+				array_unique(
+					array_map( 'strtoupper', array_map( 'strval', $params['methods'] ) )
+				)
+			);
+		}
 		foreach ( $routes as $route => $handlers ) {
 			if ( '/mcp/wp-forge' === $route ) {
 				continue;
@@ -2377,10 +2387,10 @@ class Abilities {
 				}
 				foreach ( array_keys( $handler['methods'] ) as $method ) {
 					$method = strtoupper( $method );
-					if ( ! in_array( $method, array( 'GET', 'POST', 'PUT', 'PATCH', 'DELETE' ), true ) ) {
+					if ( ! in_array( $method, $allowed_methods, true ) ) {
 						continue;
 					}
-					if ( ! empty( $params['methods'] ) && ! in_array( $method, $params['methods'], true ) ) {
+					if ( $method_filter && ! in_array( $method, $method_filter, true ) ) {
 						continue;
 					}
 					$items[] = array(
@@ -2393,6 +2403,53 @@ class Abilities {
 		}
 
 		return $items;
+	}
+
+	/**
+	 * Get supported REST methods from registered route handlers.
+	 *
+	 * @return array<int,string>
+	 */
+	private function get_rest_api_methods() {
+		if ( ! function_exists( 'rest_get_server' ) ) {
+			return array();
+		}
+
+		return $this->get_rest_api_methods_from_routes( rest_get_server()->get_routes() );
+	}
+
+	/**
+	 * Get supported REST methods from route data.
+	 *
+	 * @param array<string,mixed> $routes REST routes.
+	 * @return array<int,string>
+	 */
+	private function get_rest_api_methods_from_routes( $routes ) {
+		$methods = array();
+
+		foreach ( $routes as $route => $handlers ) {
+			if ( '/mcp/wp-forge' === $route || ! is_array( $handlers ) ) {
+				continue;
+			}
+
+			foreach ( $handlers as $handler ) {
+				if ( empty( $handler['methods'] ) || ! is_array( $handler['methods'] ) ) {
+					continue;
+				}
+
+				foreach ( array_keys( $handler['methods'] ) as $method ) {
+					$method = strtoupper( trim( (string) $method ) );
+					if ( '' !== $method ) {
+						$methods[] = $method;
+					}
+				}
+			}
+		}
+
+		$methods = array_values( array_unique( $methods ) );
+		sort( $methods );
+
+		return $methods;
 	}
 
 	/**
