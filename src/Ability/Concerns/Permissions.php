@@ -433,7 +433,16 @@ trait Permissions {
 	 * @return true|array<string,mixed>
 	 */
 	private function can_update_global_styles_request( $params ) {
-		return empty( $params['id'] ) || $this->current_user_can_cap( 'edit_post', (int) $params['id'] ) ? true : $this->permission_error( 'Access denied for editing this global styles post.' );
+		if ( empty( $params['id'] ) || ! function_exists( 'get_post' ) ) {
+			return true;
+		}
+
+		$post = get_post( (int) $params['id'] );
+		if ( ! $post || 'wp_global_styles' !== $post->post_type ) {
+			return true;
+		}
+
+		return $this->current_user_can_cap( 'edit_post', (int) $post->ID ) ? true : $this->permission_error( 'Access denied for editing this global styles post.' );
 	}
 
 	/**

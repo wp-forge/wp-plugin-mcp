@@ -93,6 +93,7 @@ $test_rest_routes     = array(
 		),
 	),
 );
+$test_checked_mimes   = null;
 $test_post_types      = array(
 	'post'          => array(
 		'name'                => 'post',
@@ -283,6 +284,43 @@ if ( ! function_exists( 'get_allowed_mime_types' ) ) {
 			'png'          => 'image/png',
 			'mcp'          => 'application/x-mcp-test',
 		);
+	}
+}
+
+if ( ! function_exists( 'wp_upload_bits' ) ) {
+	function wp_upload_bits( $name, $deprecated, $bits ) {
+		unset( $deprecated );
+
+		$file = sys_get_temp_dir() . '/' . basename( $name );
+		file_put_contents( $file, $bits );
+
+		return array(
+			'file'  => $file,
+			'type'  => 'image/png',
+			'error' => false,
+		);
+	}
+}
+
+if ( ! function_exists( 'wp_check_filetype_and_ext' ) ) {
+	function wp_check_filetype_and_ext( $file, $filename, $mimes = null ) {
+		global $test_checked_mimes;
+		unset( $file, $filename );
+
+		$test_checked_mimes = $mimes;
+
+		return array(
+			'ext'  => 'png',
+			'type' => 'image/png',
+		);
+	}
+}
+
+if ( ! function_exists( 'wp_insert_attachment' ) ) {
+	function wp_insert_attachment( $args, $file ) {
+		unset( $file );
+
+		return 'image/png' === $args['post_mime_type'] ? 123 : 0;
 	}
 }
 
@@ -478,6 +516,12 @@ assert_same( 400, $invalid_any_save_status['statusCode'], 'The any pseudo-status
 $invalid_role = $abilities->call( 'wp-forge-user-save', array( 'username' => 'bad_role', 'email' => 'bad-role@example.com', 'password' => 'password', 'role' => 'mcp_missing_role' ) );
 assert_same( 'error', $invalid_role['status'], 'Save user should reject unknown roles before writing.' );
 assert_same( 400, $invalid_role['statusCode'], 'Unknown roles should be a client error.' );
+
+$test_checked_mimes = 'not-called';
+$valid_upload       = $abilities->call( 'wp-forge-media-upload', array( 'filename' => 'valid.png', 'base64' => base64_encode( 'png' ), 'mime_type' => 'image/png' ) );
+assert_same( 'success', $valid_upload['status'], 'Upload media should accept a valid file with a matching MIME type.' );
+assert_same( 123, $valid_upload['message'], 'Upload media should return the attachment ID for a successful upload.' );
+assert_same( null, $test_checked_mimes, 'Upload media should let WordPress use the default MIME registry for filetype detection.' );
 
 $invalid_mime = $abilities->call( 'wp-forge-media-upload', array( 'filename' => 'bad.bin', 'base64' => base64_encode( 'bad' ), 'mime_type' => 'application/x-missing-mcp' ) );
 assert_same( 'error', $invalid_mime['status'], 'Upload media should reject unsupported MIME types before writing.' );

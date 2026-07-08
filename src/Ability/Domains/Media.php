@@ -71,20 +71,28 @@ trait Media {
 			return Response::error( $upload['error'], 400 );
 		}
 
+		$detected_mime_type = isset( $upload['type'] ) ? $upload['type'] : '';
 		if ( function_exists( 'wp_check_filetype_and_ext' ) ) {
-			$filetype = wp_check_filetype_and_ext( $upload['file'], $params['filename'], isset( $params['mime_type'] ) ? $params['mime_type'] : null );
+			$filetype = wp_check_filetype_and_ext( $upload['file'], $params['filename'] );
 			if ( empty( $filetype['type'] ) || empty( $filetype['ext'] ) ) {
 				if ( file_exists( $upload['file'] ) ) {
 					unlink( $upload['file'] );
 				}
 				return Response::error( 'Uploaded file type is not allowed.', 400 );
 			}
+			$detected_mime_type = $filetype['type'];
+			if ( isset( $params['mime_type'] ) && $params['mime_type'] !== $detected_mime_type ) {
+				if ( file_exists( $upload['file'] ) ) {
+					unlink( $upload['file'] );
+				}
+				return Response::error( 'Uploaded file type does not match MIME type.', 400 );
+			}
 		}
 
 		$id = wp_insert_attachment(
 			array(
 				'post_title'     => isset( $params['title'] ) ? $params['title'] : $params['filename'],
-				'post_mime_type' => isset( $params['mime_type'] ) ? $params['mime_type'] : $upload['type'],
+				'post_mime_type' => $detected_mime_type,
 				'post_status'    => 'inherit',
 			),
 			$upload['file']

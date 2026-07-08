@@ -327,10 +327,10 @@ await expectSuccess('wp-forge-taxonomy-term-save', { taxonomy: 'category', id: t
 await expectSuccess('wp-forge-taxonomy-term-delete', { taxonomy: 'category', id: taxonomyTermId });
 
 const mediaId = await expectSuccess('wp-forge-media-upload', {
-  filename: `mcp-${suffix}.txt`,
-  mime_type: 'text/plain',
+  filename: `mcp-${suffix}.png`,
+  mime_type: 'image/png',
   title: `MCP media ${suffix}`,
-  base64: Buffer.from(`MCP media ${suffix}`).toString('base64'),
+  base64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC',
 });
 await expectSuccess('wp-forge-media-list', { per_page: 5 });
 await expectSuccess('wp-forge-media-list', { search: 'MCP media', per_page: 5 });
