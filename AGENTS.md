@@ -27,6 +27,11 @@ Do not load every file in `docs/` by default. Use progressive disclosure:
 - If a doc links to another doc that is directly relevant, follow that link; otherwise leave unrelated docs unread.
 - If the `docs/` folder does not exist, continue with the repository files and note that there are no docs to consult.
 
+Current docs:
+
+- [`docs/meta-annotations.md`](docs/meta-annotations.md): Guidelines for setting ability `meta.annotations` and MCP tool hints such as `readOnlyHint`, `destructiveHint`, and `idempotentHint`.
+- [`docs/permissions.md`](docs/permissions.md): Guidelines for least-privilege ability permissions, capability selection, dynamic permission callbacks, and runtime checks.
+
 ## Development Workflow
 
 - Use Composer PSR-4 autoloading and keep PHP classes in `src/`.
