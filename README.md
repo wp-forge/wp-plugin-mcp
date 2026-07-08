@@ -8,6 +8,8 @@ WordPress MCP registers WordPress abilities and exposes them through the MCP ada
 
 WordPress 6.9+ provides the core Abilities API. The MCP transport is provided by the `wordpress/mcp-adapter` Composer dependency.
 
+See [docs/architecture.md](docs/architecture.md) for the ability registry, registration trait, domain trait, schema, validation, and permission helper layout.
+
 ## Requirements
 
 - WordPress 6.9 or later.
