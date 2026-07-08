@@ -52,7 +52,6 @@ See [docs/architecture.md](docs/architecture.md) for the ability registry, regis
 | `wp-forge-media-upload` | Upload a new media file to WordPress |
 | `wp-forge-media-update` | Update a WordPress media item |
 | `wp-forge-media-delete` | Delete a WordPress media item permanently |
-| `wp-forge-media-search` | Search WordPress media by title, caption, or description |
 
 ### Site Management
 

@@ -72,8 +72,5 @@ trait MediaTools {
 		$this->add_ability( self::INTERNAL_PREFIX . 'media-delete', 'Delete Media', 'Delete a WordPress media item permanently', $id_schema, function ( $params ) {
 			return $this->delete_content_item( (int) $params['id'], 'attachment' );
 		}, false, 'upload_files', array( 'destructive' => true, 'idempotent' => true ), array( $this, 'can_delete_media_request' ) );
-		$this->add_ability( self::INTERNAL_PREFIX . 'media-search', 'Search Media', 'Search WordPress media by title, caption, or description', $list_schema, function ( $params ) {
-			return $this->search_content_items( 'attachment', array_merge( array( 'status' => 'inherit' ), $params ) );
-		}, true, 'upload_files' );
 	}
 }

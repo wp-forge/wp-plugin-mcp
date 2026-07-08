@@ -351,7 +351,7 @@ $test_post_types['mcp_movie']          = array(
 $all       = $abilities->list_abilities();
 $names     = array_column( $all, 'name' );
 
-assert_same( 53, count( $all ), 'Expected the WordPress ability catalog.' );
+assert_same( 52, count( $all ), 'Expected the WordPress ability catalog.' );
 assert_true( in_array( 'wp-forge-content-search', $names, true ), 'Expected content search ability.' );
 assert_true( in_array( 'wp-forge-site-info-get', $names, true ), 'Expected site info ability.' );
 assert_true( in_array( 'wp-forge-api-function-run', $names, true ), 'Expected REST runner ability.' );
@@ -374,7 +374,6 @@ $expected_named_tools = array(
 	'wp-forge-media-upload',
 	'wp-forge-media-update',
 	'wp-forge-media-delete',
-	'wp-forge-media-search',
 	'wp-forge-user-search',
 	'wp-forge-user-get',
 	'wp-forge-user-save',
@@ -489,7 +488,7 @@ assert_same( 'boolean', $post_types_schema['input_schema']['properties']['public
 
 $direct_tools = $abilities->list_tools();
 $direct_tool_names = array_column( $direct_tools, 'name' );
-assert_same( 53, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
+assert_same( 52, count( $direct_tools ), 'Expected all abilities to be exposed as direct MCP tools.' );
 assert_true( in_array( 'wp-forge-content-search', $direct_tool_names, true ), 'Direct tool list should include content search.' );
 assert_true( in_array( 'wp-forge-theme-active-get', $direct_tool_names, true ), 'Direct tool list should include active theme.' );
 assert_true( ! in_array( 'wp-forge-list-abilities', $direct_tool_names, true ), 'Gateway list tool should not be exposed.' );
@@ -571,11 +570,11 @@ $mcp_api_functions = $abilities->call(
 assert_same( array(), $mcp_api_functions['message'], 'REST function list should not expose the MCP transport route.' );
 
 $wp_ability_names = $abilities->get_wordpress_ability_names();
-assert_same( 53, count( $wp_ability_names ), 'Expected all abilities to be available for the MCP adapter.' );
+assert_same( 52, count( $wp_ability_names ), 'Expected all abilities to be available for the MCP adapter.' );
 assert_true( in_array( 'wp-forge/content-search', $wp_ability_names, true ), 'Adapter ability list should use WordPress ability names.' );
 
 $abilities->register_wordpress_abilities();
-assert_same( 53, count( $registered_abilities ), 'Expected every ability to be registered with the WordPress Abilities API.' );
+assert_same( 52, count( $registered_abilities ), 'Expected every ability to be registered with the WordPress Abilities API.' );
 assert_true( isset( $registered_abilities['wp-forge/content-search'] ), 'Content search should be registered with the WordPress Abilities API.' );
 assert_same( 'Search and filter content for any registered post type', $registered_abilities['wp-forge/content-search']['description'], 'Registered ability should preserve descriptions.' );
 assert_same( true, $registered_abilities['wp-forge/content-search']['meta']['show_in_rest'], 'Registered abilities should be exposed through the Abilities REST API.' );
@@ -622,7 +621,7 @@ assert_same( 'wp-forge', $adapter->args[0], 'Adapter server ID should be stable.
 assert_same( 'mcp', $adapter->args[1], 'Adapter server should keep the existing REST namespace.' );
 assert_same( 'wp-forge', $adapter->args[2], 'Adapter server should keep the existing REST route.' );
 assert_same( 'WordPress MCP', $adapter->args[3], 'Adapter server should preserve the server name.' );
-assert_same( 53, count( $adapter->args[9] ), 'Adapter server should expose every registered ability.' );
+assert_same( 52, count( $adapter->args[9] ), 'Adapter server should expose every registered ability.' );
 assert_true( in_array( 'wp-forge/content-search', $adapter->args[9], true ), 'Adapter server should expose content search.' );
 
 echo 'Tests passed: ' . $tests_run . PHP_EOL;

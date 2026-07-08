@@ -189,7 +189,6 @@ const expectedTools = [
   'wp-forge-media-upload',
   'wp-forge-media-update',
   'wp-forge-media-delete',
-  'wp-forge-media-search',
   'wp-forge-user-search',
   'wp-forge-user-get',
   'wp-forge-user-save',
@@ -334,7 +333,7 @@ const mediaId = await expectSuccess('wp-forge-media-upload', {
   base64: Buffer.from(`MCP media ${suffix}`).toString('base64'),
 });
 await expectSuccess('wp-forge-media-list', { per_page: 5 });
-await expectSuccess('wp-forge-media-search', { search: 'MCP media', per_page: 5 });
+await expectSuccess('wp-forge-media-list', { search: 'MCP media', per_page: 5 });
 const media = await expectSuccess('wp-forge-media-get', { id: mediaId });
 assert(media.id === mediaId, 'wp-forge-media-get returned the wrong item');
 const mediaFile = await expectSuccess('wp-forge-media-file-get', { id: mediaId });
