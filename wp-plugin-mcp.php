@@ -3,7 +3,7 @@
  * Plugin Name: WordPress MCP
  * Plugin URI: https://github.com/wp-forge/wp-plugin-mcp
  * Description: A friendly Model Context Protocol endpoint for WordPress sites.
- * Version: 0.1.0
+ * Version: 1.0.0
  * Requires at least: 6.9
  * Requires PHP: 8.2
  * Author: WP Scholar
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WP_FORGE_MCP_VERSION', '0.1.0' );
+define( 'WP_FORGE_MCP_VERSION', '1.0.0' );
 define( 'WP_FORGE_MCP_FILE', __FILE__ );
 define( 'WP_FORGE_MCP_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WP_FORGE_MCP_URL', plugin_dir_url( __FILE__ ) );
