@@ -18,12 +18,13 @@ jobs:
         run: |
           tag="${{ github.event.release.tag_name }}"
 
-          if ! printf '%s' "$tag" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "Release asset uploads only run for numeric semver tags like 1.0.0 or 2.40.4."
+          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Release asset uploads only run for v-prefixed semver tags like v1.0.0 or v2.40.4."
             exit 1
           fi
 
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
       - name: Setup workflow context
         id: workflow
@@ -45,12 +46,12 @@ jobs:
           plugin_header_version="$(awk -F ': ' '/^[[:space:]]*\* Version:/ { print $2; exit }' wp-plugin-mcp.php)"
           plugin_constant_version="$(sed -n "s/^define( 'WP_FORGE_MCP_VERSION', '\([^']*\)' );$/\1/p" wp-plugin-mcp.php)"
 
-          if [ "$plugin_header_version" != "$RELEASE_TAG" ]; then
+          if [ "$plugin_header_version" != "${RELEASE_TAG#v}" ]; then
             echo "Plugin header version ${plugin_header_version} does not match release tag ${RELEASE_TAG}."
             exit 1
           fi
 
-          if [ "$plugin_constant_version" != "$RELEASE_TAG" ]; then
+          if [ "$plugin_constant_version" != "${RELEASE_TAG#v}" ]; then
             echo "WP_FORGE_MCP_VERSION ${plugin_constant_version} does not match release tag ${RELEASE_TAG}."
             exit 1
           fi
@@ -58,7 +59,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.2'
           coverage: none
 
       - name: Install production dependencies
@@ -70,15 +71,19 @@ jobs:
           PACKAGE: ${{ steps.workflow.outputs.PACKAGE }}
         run: |
           mkdir -p "$DIST/$PACKAGE"
-          rsync -r --delete --exclude-from=.distignore ./ "$DIST/$PACKAGE/"
+          rsync -a --delete --exclude-from=.distignore ./ "$DIST/$PACKAGE/"
 
       - name: Build zip
         env:
           DIST: ${{ steps.workflow.outputs.DIST }}
           PACKAGE: ${{ steps.workflow.outputs.PACKAGE }}
+          VERSION: ${{ steps.release.outputs.version }}
         run: |
           cd "$DIST"
-          zip -r "${PACKAGE}.zip" "$PACKAGE"
+          ARCHIVE="${PACKAGE}-v${VERSION}.zip"
+          zip -r "$ARCHIVE" "$PACKAGE"
+          unzip -Z1 "$ARCHIVE" | awk -F/ 'NF && $1 != "wp-plugin-mcp" { exit 1 }'
+          unzip -Z1 "$ARCHIVE" | grep -Fx 'wp-plugin-mcp/vendor/autoload.php'
 
       - name: Upload release asset
         env:
@@ -86,4 +91,5 @@ jobs:
           DIST: ${{ steps.workflow.outputs.DIST }}
           PACKAGE: ${{ steps.workflow.outputs.PACKAGE }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
-        run: gh release upload "$RELEASE_TAG" "$DIST/${PACKAGE}.zip" --clobber
+          VERSION: ${{ steps.release.outputs.version }}
+        run: gh release upload "$RELEASE_TAG" "$DIST/${PACKAGE}-v${VERSION}.zip" --clobber

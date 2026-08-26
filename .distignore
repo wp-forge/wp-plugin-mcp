@@ -2,6 +2,12 @@
 .github/
 .distignore
 .gitignore
+.gitattributes
+.phpcs.xml
+.phpunit.result.cache
+.phpunit.xml
+AGENTS.md
+docs/
 composer.lock
 node_modules/
 tests/
@@ -9,6 +15,7 @@ playground/
 build/
 package.json
 package-lock.json
+composer.json
 vendor/bin/
 *.zip
 *.log

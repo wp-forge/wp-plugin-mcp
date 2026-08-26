@@ -350,6 +350,27 @@ if ( ! function_exists( 'plugin_basename' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_plugin_data' ) ) {
+	function get_plugin_data( $file ) {
+		unset( $file );
+
+		return array(
+			'Name'        => 'WordPress MCP',
+			'Description' => 'A friendly Model Context Protocol endpoint for WordPress sites.',
+			'Author'      => 'WP Scholar',
+			'Version'     => WP_FORGE_MCP_VERSION,
+		);
+	}
+}
+
+if ( ! function_exists( 'get_transient' ) ) {
+	function get_transient( $transient ) {
+		unset( $transient );
+
+		return false;
+	}
+}
+
 if ( ! defined( 'WP_FORGE_MCP_FILE' ) ) {
 	define( 'WP_FORGE_MCP_FILE', dirname( __DIR__ ) . '/wp-plugin-mcp.php' );
 }
@@ -719,6 +740,9 @@ assert_true( isset( $added_actions['plugins_loaded'] ), 'Plugin should bootstrap
 assert_true( isset( $added_actions['wp_abilities_api_init'] ), 'Plugin should register abilities during wp_abilities_api_init.' );
 assert_true( isset( $added_actions['mcp_adapter_init'] ), 'Plugin should create the MCP server during mcp_adapter_init.' );
 assert_true( ! isset( $added_actions['rest_api_init'] ), 'Plugin should not register its own MCP REST route.' );
+assert_true( isset( $added_filters['pre_set_site_transient_update_plugins'] ), 'Plugin should register GitHub release update checks.' );
+assert_true( isset( $added_filters['plugins_api'] ), 'Plugin should provide GitHub release details through the WordPress plugin API.' );
+assert_true( isset( $added_actions['upgrader_process_complete'] ), 'Plugin should clear its GitHub release cache after updates.' );
 
 $adapter = new class() {
 	public $args;
