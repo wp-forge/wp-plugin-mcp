@@ -17,6 +17,8 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
 use WP_Forge\Abilities;
+use WP_Forge\ActivityLogger;
+use WP_Forge\ActivityLogObservabilityHandler;
 use WP_Forge\Plugin;
 
 $registered_abilities = array();
@@ -644,6 +646,72 @@ assert_same( true, $registered_abilities['wp-forge/content-search']['permission_
 $registered_result = $registered_abilities['wp-forge/content-search']['execute_callback']( array( 'post_type' => 'post' ) );
 assert_same( 'error', $registered_result['status'], 'Registered ability callback should dispatch to the catalog.' );
 assert_same( 500, $registered_result['statusCode'], 'Registered ability callback should return the ability response.' );
+
+$activity_log_spy = new class() extends ActivityLogger {
+	public $entries = array();
+
+	public function log_tool_call( $entry ) {
+		$this->entries[] = $entry;
+	}
+};
+$activity_handler = new ActivityLogObservabilityHandler( $activity_log_spy );
+$activity_handler->record_event(
+	'mcp.request',
+	array(
+		'method'      => 'tools/call',
+		'tool_name'   => 'wp-forge-content-search',
+		'status'      => 'error',
+		'status_code' => 403,
+		'session_id'  => 'session-1',
+	),
+	1.2
+);
+assert_same( 403, $activity_log_spy->entries[0]['status_code'], 'Activity log should pass through adapter status_code tags.' );
+assert_same( 2, $activity_log_spy->entries[0]['duration_ms'], 'Activity log should round request duration up.' );
+assert_same( 'session-1', $activity_log_spy->entries[0]['session_id'], 'Activity log should keep string session IDs.' );
+
+$activity_handler->record_event(
+	'mcp.request',
+	array(
+		'method'     => 'tools/call',
+		'tool_name'  => 'wp-forge-content-get',
+		'status'     => 'error',
+		'statusCode' => '404',
+	)
+);
+assert_same( 404, $activity_log_spy->entries[1]['status_code'], 'Activity log should accept numeric string statusCode tags.' );
+
+$activity_handler->record_event(
+	'mcp.request',
+	array(
+		'method'    => 'tools/call',
+		'tool_name' => 'wp-forge-content-save',
+		'status'    => 'error',
+	)
+);
+assert_same( 0, $activity_log_spy->entries[2]['status_code'], 'Activity log should not invent a status code when adapter tags omit one.' );
+
+$activity_handler->record_event(
+	'mcp.request',
+	array(
+		'method'      => 'tools/call',
+		'tool_name'   => 'wp-forge-content-delete',
+		'status'      => 'error',
+		'status_code' => -32603,
+	)
+);
+assert_same( 0, $activity_log_spy->entries[3]['status_code'], 'Activity log should not treat JSON-RPC error codes as HTTP status codes.' );
+
+$activity_handler->record_event(
+	'mcp.request',
+	array(
+		'method'      => 'tools/list',
+		'tool_name'   => 'wp-forge-content-search',
+		'status'      => 'success',
+		'status_code' => 200,
+	)
+);
+assert_same( 4, count( $activity_log_spy->entries ), 'Activity log should ignore non-tool-call request events.' );
 
 $plugin = Plugin::instance();
 $plugin->init();
