@@ -21,7 +21,7 @@
   },
   "require": {
     "php": ">=8.2",
-    "wordpress/mcp-adapter": "^0.5.0",
+    "wordpress/mcp-adapter": "^0.6.1",
     "silverassist/wp-github-updater": "^1.3"
   }
 }
