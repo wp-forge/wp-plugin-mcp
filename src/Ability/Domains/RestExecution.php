@@ -80,11 +80,17 @@ trait RestExecution {
 	/**
 	 * Get supported REST methods from registered route handlers.
 	 *
+	 * Ability schemas are resolved while the Abilities API registry initializes.
+	 * Calling rest_get_server() before the REST server exists would fire
+	 * rest_api_init in the middle of that registration, letting the MCP adapter
+	 * build servers before every ability is registered. Until the REST server is
+	 * initialized, fall back to the standard REST methods.
+	 *
 	 * @return array<int,string>
 	 */
 	private function get_rest_api_methods() {
-		if ( ! function_exists( 'rest_get_server' ) ) {
-			return array();
+		if ( ! function_exists( 'rest_get_server' ) || ( function_exists( 'did_action' ) && ! did_action( 'rest_api_init' ) ) ) {
+			return array( 'DELETE', 'GET', 'PATCH', 'POST', 'PUT' );
 		}
 
 		return $this->get_rest_api_methods_from_routes( rest_get_server()->get_routes() );

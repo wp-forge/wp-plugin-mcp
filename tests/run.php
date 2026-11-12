@@ -22,6 +22,7 @@ use WP_Forge\ActivityLogObservabilityHandler;
 use WP_Forge\Plugin;
 
 $registered_abilities = array();
+$test_did_actions     = array( 'rest_api_init' => 1 );
 $added_actions        = array();
 $added_filters        = array();
 $test_post_statuses   = array(
@@ -326,9 +327,19 @@ if ( ! function_exists( 'wp_insert_attachment' ) ) {
 	}
 }
 
+if ( ! function_exists( 'did_action' ) ) {
+	function did_action( $hook_name ) {
+		global $test_did_actions;
+
+		return isset( $test_did_actions[ $hook_name ] ) ? $test_did_actions[ $hook_name ] : 0;
+	}
+}
+
 if ( ! function_exists( 'rest_get_server' ) ) {
 	function rest_get_server() {
-		global $test_rest_routes;
+		global $test_rest_routes, $test_rest_server_calls;
+
+		$test_rest_server_calls = isset( $test_rest_server_calls ) ? $test_rest_server_calls + 1 : 1;
 
 		return new class( $test_rest_routes ) {
 			private $routes;
@@ -509,6 +520,13 @@ $api_list_schema = $abilities->get_schema( 'wp-forge-api-function-list' );
 $api_methods     = $api_list_schema['input_schema']['properties']['methods']['items']['enum'];
 assert_true( in_array( 'PUT', $api_methods, true ), 'REST list schema should include PUT when a REST route supports it.' );
 assert_true( ! in_array( 'OPTIONS', $api_methods, true ), 'REST list schema should be derived from registered route methods.' );
+
+$test_did_actions['rest_api_init'] = 0;
+$test_rest_server_calls            = 0;
+$early_api_list_schema             = $abilities->get_schema( 'wp-forge-api-function-list' );
+assert_same( 0, $test_rest_server_calls, 'REST schemas should not initialize the REST server before rest_api_init.' );
+assert_same( array( 'DELETE', 'GET', 'PATCH', 'POST', 'PUT' ), $early_api_list_schema['input_schema']['properties']['methods']['items']['enum'], 'REST schemas should fall back to standard methods before rest_api_init.' );
+$test_did_actions['rest_api_init'] = 1;
 
 $api_details_schema = $abilities->get_schema( 'wp-forge-api-function-details-get' );
 assert_same(
