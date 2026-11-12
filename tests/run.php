@@ -17,6 +17,7 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
 use WP_Forge\Abilities;
+use WP_Forge\GitHubUpdater;
 use WP_Forge\ActivityLogger;
 use WP_Forge\ActivityLogObservabilityHandler;
 use WP_Forge\Plugin;
@@ -357,28 +358,96 @@ if ( ! function_exists( 'rest_get_server' ) ) {
 
 if ( ! function_exists( 'plugin_basename' ) ) {
 	function plugin_basename( $file ) {
-		return basename( $file );
+		return basename( dirname( $file ) ) . '/' . basename( $file );
 	}
 }
 
-if ( ! function_exists( 'get_plugin_data' ) ) {
-	function get_plugin_data( $file ) {
-		unset( $file );
-
-		return array(
-			'Name'        => 'WordPress MCP',
-			'Description' => 'A friendly Model Context Protocol endpoint for WordPress sites.',
-			'Author'      => 'WP Scholar',
-			'Version'     => WP_FORGE_MCP_VERSION,
-		);
-	}
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
+	define( 'HOUR_IN_SECONDS', 3600 );
 }
+
+$test_transients     = array();
+$test_http_requests  = array();
+$test_http_response  = null;
 
 if ( ! function_exists( 'get_transient' ) ) {
 	function get_transient( $transient ) {
-		unset( $transient );
+		global $test_transients;
 
-		return false;
+		return array_key_exists( $transient, $test_transients ) ? $test_transients[ $transient ]['value'] : false;
+	}
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+	function set_transient( $transient, $value, $expiration = 0 ) {
+		global $test_transients;
+		$test_transients[ $transient ] = array(
+			'value'      => $value,
+			'expiration' => $expiration,
+		);
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+	function delete_transient( $transient ) {
+		global $test_transients;
+		unset( $test_transients[ $transient ] );
+
+		return true;
+	}
+}
+
+if ( ! class_exists( 'WP_Error' ) ) {
+	class WP_Error {}
+}
+
+if ( ! function_exists( 'is_wp_error' ) ) {
+	function is_wp_error( $thing ) {
+		return $thing instanceof WP_Error;
+	}
+}
+
+if ( ! function_exists( 'wp_remote_get' ) ) {
+	function wp_remote_get( $url, $args = array() ) {
+		global $test_http_requests, $test_http_response;
+		$test_http_requests[] = array(
+			'url'  => $url,
+			'args' => $args,
+		);
+
+		return $test_http_response;
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_response_code' ) ) {
+	function wp_remote_retrieve_response_code( $response ) {
+		return is_array( $response ) && isset( $response['response']['code'] ) ? $response['response']['code'] : '';
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
+	function wp_remote_retrieve_body( $response ) {
+		return is_array( $response ) && isset( $response['body'] ) ? $response['body'] : '';
+	}
+}
+
+if ( ! function_exists( 'esc_html' ) ) {
+	function esc_html( $text ) {
+		return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
+if ( ! function_exists( 'esc_html__' ) ) {
+	function esc_html__( $text, $domain = 'default' ) {
+		return esc_html( $text );
+	}
+}
+
+if ( ! function_exists( 'esc_url' ) ) {
+	function esc_url( $url ) {
+		return htmlspecialchars( (string) $url, ENT_QUOTES, 'UTF-8' );
 	}
 }
 
@@ -758,9 +827,6 @@ assert_true( isset( $added_actions['plugins_loaded'] ), 'Plugin should bootstrap
 assert_true( isset( $added_actions['wp_abilities_api_init'] ), 'Plugin should register abilities during wp_abilities_api_init.' );
 assert_true( isset( $added_actions['mcp_adapter_init'] ), 'Plugin should create the MCP server during mcp_adapter_init.' );
 assert_true( ! isset( $added_actions['rest_api_init'] ), 'Plugin should not register its own MCP REST route.' );
-assert_true( array( $plugin, 'initialize_github_updater' ) === ( $added_actions['init'] ?? null ), 'Plugin should defer the GitHub updater until init so translations are not loaded too early.' );
-assert_true( ! isset( $added_filters['pre_set_site_transient_update_plugins'] ), 'GitHub updater should not register hooks before init.' );
-call_user_func( $added_actions['init'] );
 assert_true( isset( $added_filters['pre_set_site_transient_update_plugins'] ), 'Plugin should register GitHub release update checks.' );
 assert_true( isset( $added_filters['plugins_api'] ), 'Plugin should provide GitHub release details through the WordPress plugin API.' );
 assert_true( isset( $added_actions['upgrader_process_complete'] ), 'Plugin should clear its GitHub release cache after updates.' );
@@ -780,5 +846,109 @@ assert_same( 'wp-forge', $adapter->args[2], 'Adapter server should keep the exis
 assert_same( 'WordPress MCP', $adapter->args[3], 'Adapter server should preserve the server name.' );
 assert_same( 52, count( $adapter->args[9] ), 'Adapter server should expose every registered ability.' );
 assert_true( in_array( 'wp-forge/content-search', $adapter->args[9], true ), 'Adapter server should expose content search.' );
+
+
+// GitHub updater.
+$updater_basename = 'wp-plugin-mcp/wp-plugin-mcp.php';
+$updater_release  = array(
+	'tag_name'     => '1.2.0',
+	'body'         => "Fixes <script>alert(1)</script>\nMore fixes",
+	'html_url'     => 'https://github.com/wp-forge/wp-plugin-mcp/releases/tag/1.2.0',
+	'published_at' => '2026-11-12T00:00:00Z',
+	'assets'       => array(
+		array(
+			'name'                 => 'other.zip',
+			'browser_download_url' => 'https://example.com/other.zip',
+		),
+		array(
+			'name'                 => 'wp-plugin-mcp-v1.2.0.zip',
+			'browser_download_url' => 'https://github.com/wp-forge/wp-plugin-mcp/releases/download/1.2.0/wp-plugin-mcp-v1.2.0.zip',
+		),
+	),
+);
+$make_updater     = function ( $version ) {
+	return new GitHubUpdater(
+		'/wordpress/wp-content/plugins/wp-plugin-mcp/wp-plugin-mcp.php',
+		'wp-forge/wp-plugin-mcp',
+		$version,
+		'wp-plugin-mcp-v{version}.zip',
+		array(
+			'name'         => 'WordPress MCP',
+			'requires'     => '6.9',
+			'requires_php' => '8.2',
+		)
+	);
+};
+$update_transient = function () use ( $updater_basename ) {
+	return (object) array(
+		'checked'   => array( $updater_basename => '1.0.1' ),
+		'response'  => array(),
+		'no_update' => array(),
+	);
+};
+
+$test_transients    = array();
+$test_http_requests = array();
+$test_http_response = array(
+	'response' => array( 'code' => 200 ),
+	'body'     => json_encode( $updater_release ),
+);
+$updater            = $make_updater( '1.0.1' );
+$updated            = $updater->check_for_update( $update_transient() );
+assert_true( isset( $updated->response[ $updater_basename ] ), 'Updater should offer a newer GitHub release.' );
+assert_same( '1.2.0', $updated->response[ $updater_basename ]->new_version, 'Updater should report the release version.' );
+assert_same( 'wp-plugin-mcp', $updated->response[ $updater_basename ]->slug, 'Updater should use the plugin directory as its slug.' );
+assert_same( $updater_release['assets'][1]['browser_download_url'], $updated->response[ $updater_basename ]->package, 'Updater should download the matching release asset.' );
+assert_same( 'https://api.github.com/repos/wp-forge/wp-plugin-mcp/releases/latest', $test_http_requests[0]['url'], 'Updater should read the latest GitHub release.' );
+assert_same( 12 * HOUR_IN_SECONDS, $test_transients[ GitHubUpdater::CACHE_KEY ]['expiration'], 'Updater should cache successful release lookups.' );
+
+$updater->check_for_update( $update_transient() );
+assert_same( 1, count( $test_http_requests ), 'Updater should reuse the cached release.' );
+
+$just_updated                                = $update_transient();
+$just_updated->checked[ $updater_basename ] = '1.2.0';
+$just_updated                                = $updater->check_for_update( $just_updated );
+assert_true( ! isset( $just_updated->response[ $updater_basename ] ), 'Updater should compare against the installed version WordPress reports, not the version still in memory after an update.' );
+
+$unchanged = (object) array( 'checked' => array() );
+assert_same( $unchanged, $updater->check_for_update( $unchanged ), 'Updater should skip transients without checked plugins.' );
+
+$current_transient                                = $update_transient();
+$current_transient->checked[ $updater_basename ] = '1.2.0';
+$current                                          = $make_updater( '1.2.0' )->check_for_update( $current_transient );
+assert_true( ! isset( $current->response[ $updater_basename ] ), 'Updater should not offer the installed version.' );
+assert_true( isset( $current->no_update[ $updater_basename ] ), 'Updater should list up-to-date plugins in no_update so auto-updates can be toggled.' );
+
+$info = $updater->plugin_info( false, 'plugin_information', (object) array( 'slug' => 'wp-plugin-mcp' ) );
+assert_same( '1.2.0', $info->version, 'Plugin details should show the release version.' );
+assert_same( 'WordPress MCP', $info->name, 'Plugin details should show the plugin name.' );
+assert_true( false === strpos( $info->sections['changelog'], '<script>' ), 'Release notes should be escaped.' );
+assert_true( false !== strpos( $info->sections['changelog'], 'View this release on GitHub' ), 'Release notes should link to the GitHub release.' );
+assert_same( 'default', $updater->plugin_info( 'default', 'plugin_information', (object) array( 'slug' => 'akismet' ) ), 'Plugin details should ignore other plugins.' );
+
+$updater->clear_cache( null, array( 'type' => 'plugin', 'action' => 'update', 'plugins' => array( 'akismet/akismet.php' ) ) );
+assert_true( isset( $test_transients[ GitHubUpdater::CACHE_KEY ] ), 'Updater should keep its cache when other plugins update.' );
+$updater->clear_cache( null, array( 'type' => 'plugin', 'action' => 'update', 'plugins' => array( $updater_basename ) ) );
+assert_true( ! isset( $test_transients[ GitHubUpdater::CACHE_KEY ] ), 'Updater should clear its cache after it is updated.' );
+
+$test_transients    = array();
+$test_http_requests = array();
+$no_asset_release   = $updater_release;
+$no_asset_release['assets'] = array( $updater_release['assets'][0] );
+$test_http_response = array(
+	'response' => array( 'code' => 200 ),
+	'body'     => json_encode( $no_asset_release ),
+);
+$missing_asset = $updater->check_for_update( $update_transient() );
+assert_true( empty( $missing_asset->response ), 'Updater should not offer releases without the plugin zip.' );
+
+$test_transients    = array();
+$test_http_requests = array();
+$test_http_response = new WP_Error();
+$failed             = $updater->check_for_update( $update_transient() );
+assert_true( empty( $failed->response ) && empty( $failed->no_update ), 'Updater should leave the transient alone when GitHub is unreachable.' );
+assert_same( HOUR_IN_SECONDS, $test_transients[ GitHubUpdater::CACHE_KEY ]['expiration'], 'Updater should briefly cache failed lookups.' );
+$updater->check_for_update( $update_transient() );
+assert_same( 1, count( $test_http_requests ), 'Updater should not retry GitHub on every check after a failure.' );
 
 echo 'Tests passed: ' . $tests_run . PHP_EOL;

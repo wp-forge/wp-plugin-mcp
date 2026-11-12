@@ -50,7 +50,7 @@ class Plugin {
 	/**
 	 * GitHub release updater.
 	 *
-	 * @var object|null
+	 * @var GitHubUpdater
 	 */
 	private $github_updater;
 
@@ -74,6 +74,19 @@ class Plugin {
 		$this->abilities       = new Abilities();
 		$this->activity_logger = new ActivityLogger();
 		$this->admin           = new Admin( $this->activity_logger );
+		$this->github_updater  = new GitHubUpdater(
+			WP_FORGE_MCP_FILE,
+			'wp-forge/wp-plugin-mcp',
+			WP_FORGE_MCP_VERSION,
+			'wp-plugin-mcp-v{version}.zip',
+			array(
+				'name'         => 'WordPress MCP',
+				'author'       => 'WP Scholar',
+				'homepage'     => 'https://github.com/wp-forge/wp-plugin-mcp',
+				'requires'     => '6.9',
+				'requires_php' => '8.2',
+			)
+		);
 	}
 
 	/**
@@ -82,7 +95,7 @@ class Plugin {
 	 * @return void
 	 */
 	public function init() {
-		add_action( 'init', array( $this, 'initialize_github_updater' ), 0 );
+		$this->github_updater->register();
 		add_action( 'admin_init', array( $this->activity_logger, 'maybe_create_table' ) );
 		add_action( 'admin_init', array( __CLASS__, 'ensure_custom_capabilities' ) );
 		add_action( 'plugins_loaded', array( $this, 'bootstrap_mcp_adapter' ) );
@@ -90,37 +103,6 @@ class Plugin {
 		add_action( 'mcp_adapter_init', array( $this, 'create_mcp_server' ) );
 		add_action( 'admin_menu', array( $this->admin, 'register_menu' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( WP_FORGE_MCP_FILE ), array( $this->admin, 'add_settings_link' ) );
-	}
-
-	/**
-	 * Register GitHub release updates with WordPress.
-	 *
-	 * Runs on `init` because the updater reads translated plugin headers, and
-	 * loading the plugin text domain before `init` triggers a core notice.
-	 *
-	 * @return void
-	 */
-	public function initialize_github_updater() {
-		if ( null !== $this->github_updater ) {
-			return;
-		}
-
-		if ( ! class_exists( '\\SilverAssist\\WpGithubUpdater\\Updater' ) || ! class_exists( '\\SilverAssist\\WpGithubUpdater\\UpdaterConfig' ) ) {
-			return;
-		}
-
-		$config = new \SilverAssist\WpGithubUpdater\UpdaterConfig(
-			WP_FORGE_MCP_FILE,
-			'wp-forge/wp-plugin-mcp',
-			array(
-				'requires_wordpress' => '6.9',
-				'requires_php'       => '8.2',
-				'asset_pattern'      => 'wp-plugin-mcp-v{version}.zip',
-				'text_domain'        => 'wp-plugin-mcp',
-			)
-		);
-
-		$this->github_updater = new \SilverAssist\WpGithubUpdater\Updater( $config );
 	}
 
 	/**
