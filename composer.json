@@ -21,6 +21,6 @@
   },
   "require": {
     "php": ">=8.2",
-    "wordpress/mcp-adapter": "^0.6.1"
+    "wordpress/mcp-adapter": "^0.7.1"
   }
 }
