@@ -82,7 +82,7 @@ class Plugin {
 	 * @return void
 	 */
 	public function init() {
-		$this->initialize_github_updater();
+		add_action( 'init', array( $this, 'initialize_github_updater' ), 0 );
 		add_action( 'admin_init', array( $this->activity_logger, 'maybe_create_table' ) );
 		add_action( 'admin_init', array( __CLASS__, 'ensure_custom_capabilities' ) );
 		add_action( 'plugins_loaded', array( $this, 'bootstrap_mcp_adapter' ) );
@@ -95,9 +95,16 @@ class Plugin {
 	/**
 	 * Register GitHub release updates with WordPress.
 	 *
+	 * Runs on `init` because the updater reads translated plugin headers, and
+	 * loading the plugin text domain before `init` triggers a core notice.
+	 *
 	 * @return void
 	 */
-	private function initialize_github_updater() {
+	public function initialize_github_updater() {
+		if ( null !== $this->github_updater ) {
+			return;
+		}
+
 		if ( ! class_exists( '\\SilverAssist\\WpGithubUpdater\\Updater' ) || ! class_exists( '\\SilverAssist\\WpGithubUpdater\\UpdaterConfig' ) ) {
 			return;
 		}

@@ -740,6 +740,9 @@ assert_true( isset( $added_actions['plugins_loaded'] ), 'Plugin should bootstrap
 assert_true( isset( $added_actions['wp_abilities_api_init'] ), 'Plugin should register abilities during wp_abilities_api_init.' );
 assert_true( isset( $added_actions['mcp_adapter_init'] ), 'Plugin should create the MCP server during mcp_adapter_init.' );
 assert_true( ! isset( $added_actions['rest_api_init'] ), 'Plugin should not register its own MCP REST route.' );
+assert_true( array( $plugin, 'initialize_github_updater' ) === ( $added_actions['init'] ?? null ), 'Plugin should defer the GitHub updater until init so translations are not loaded too early.' );
+assert_true( ! isset( $added_filters['pre_set_site_transient_update_plugins'] ), 'GitHub updater should not register hooks before init.' );
+call_user_func( $added_actions['init'] );
 assert_true( isset( $added_filters['pre_set_site_transient_update_plugins'] ), 'Plugin should register GitHub release update checks.' );
 assert_true( isset( $added_filters['plugins_api'] ), 'Plugin should provide GitHub release details through the WordPress plugin API.' );
 assert_true( isset( $added_actions['upgrader_process_complete'] ), 'Plugin should clear its GitHub release cache after updates.' );
